@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "User-Agent", "operation": "set", "value": "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Mobile Safari/537.36" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "*://*/*",
+      "resourceTypes": ["sub_frame"]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        { "header": "Access-Control-Allow-Origin", "operation": "remove" },
+        { "header": "Content-Security-Policy", "operation": "remove" },
+        { "header": "X-Frame-Options", "operation": "remove" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "*://*/*",
+      "resourceTypes": ["main_frame", "sub_frame"]
+    }
+  }
+]
