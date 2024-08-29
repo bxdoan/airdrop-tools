@@ -295,7 +295,7 @@ class GameBot {
         .replace(/\r/g, '')
         .split('\n')
         .filter(Boolean);
-    const proxyFile = path.join(__dirname, 'proxy.txt');
+    const proxyFile = path.join(__dirname, './../data/proxy.txt');
     const proxies = fs.readFileSync(proxyFile, 'utf8')
         .replace(/\r/g, '')
         .split('\n')
