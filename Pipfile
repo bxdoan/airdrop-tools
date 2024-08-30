@@ -7,6 +7,7 @@ name = "pypi"
 bip-utils = "*"
 web3 = "*"
 python-dotenv = "*"
+colorama = "*"
 
 [requires]
 python_version = "3.11"
