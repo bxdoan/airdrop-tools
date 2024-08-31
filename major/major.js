@@ -170,13 +170,13 @@ class GLaDOS {
     } 
 
     async main() {
-        const dataFile = 'data.txt';
+        const name_file = path.basename(__filename).split('/').pop().split('.')[0];
+        const dataFile = `./../data/${name_file}.txt`;
         const data = fs.readFileSync(dataFile, 'utf8')
             .split('\n')
             .filter(Boolean);
 
-        while (true) {
-            for (let i = 0; i < data.length; i++) {
+        for (let i = 0; i < data.length; i++) {
                 const init_data = data[i].trim();
 
                 const authResult = await this.authenticate(init_data);
@@ -234,8 +234,6 @@ class GLaDOS {
                     await this.waitWithCountdown(3);
                 }
             }
-            await this.waitWithCountdown(28850);
-        }
     }
 }
 
