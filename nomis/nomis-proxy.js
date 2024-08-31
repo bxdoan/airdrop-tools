@@ -346,14 +346,12 @@ class Nomis {
                             }
                         } catch (error) {
                             this.log(`${'Lỗi khi xử lý referrals'.red}`);
-                            console.log(error);
-                        }                        
+                        }
                     } else {
                         this.log(`${'Lỗi: Không tìm thấy ID người dùng'.red}`);
                     }
                 } catch (error) {
                     this.log(`${'Lỗi khi xử lý tài khoản'.red}`);
-                    console.log(error);
                 }
             }
     

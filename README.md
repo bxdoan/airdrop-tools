@@ -23,7 +23,7 @@ Create data file in `./data/blum.txt` with format
 Install extension `./bypasstele` into your web browser and get query_id
 ![image](imgs/get_query_id.jpg)
 
-    Optional: create proxy file in `./data/proxy.txt`  with format `ip:port:username:password`
+    Optional: create proxy file in `./data/proxy.txt`  with format `http://user:pass@ip:port` or `ip:port:username:password`
 
 
 ## Run
