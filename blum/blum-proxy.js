@@ -15,6 +15,8 @@ class GameBot {
     this.proxy = null;
     this.proxyAgent = null;
     this.firstAccountEndTime = null;
+    this.listProxies = [];
+    this.indexProxies = 0;
   }
 
   log(msg, type = 'info') {
@@ -293,14 +295,19 @@ class GameBot {
     // from ip:port:user:pass to http://user:pass@ip:port
     const parts = proxy.split(':');
     if (parts.length === 4) {
-      const formatProxy = `http://${parts[2]}:${parts[3]}@${parts[0]}:${parts[1]}`
-      this.log(`Format Proxy: ${proxy} => ${formatProxy}`, 'info');
-      return formatProxy;
+      return `http://${parts[2]}:${parts[3]}@${parts[0]}:${parts[1]}`
     } else {
-      const formatProxy = `http://${parts[0]}:${parts[1]}`;
-      this.log(`Format Proxy: ${proxy} => ${formatProxy}`, 'info');
-      return formatProxy;
+      return `http://${parts[0]}:${parts[1]}`;
     }
+  }
+
+  getProxy() {
+    const proxy = this.listProxies[this.indexProxies];
+    this.indexProxies++;
+    if (this.indexProxies >= this.listProxies.length) {
+      this.indexProxies = 0;
+    }
+    return proxy;
   }
 
   async main() {
@@ -310,17 +317,16 @@ class GameBot {
         .split('\n')
         .filter(Boolean);
     const proxyFile = path.join(__dirname, './../data/proxy.txt');
-    const proxies = fs.readFileSync(proxyFile, 'utf8')
+    this.listProxies = fs.readFileSync(proxyFile, 'utf8')
         .replace(/\r/g, '')
         .split('\n')
         .filter(Boolean);
 
     const hoinhiemvu = 'y';
-
     while (true) {
       for (let i = 0; i < queryIds.length; i++) {
         this.queryId = queryIds[i];
-        this.proxy = this.formatProxy(proxies[i]);
+        this.proxy = this.formatProxy(this.getProxy());
         this.proxyAgent = new HttpsProxyAgent(this.proxy);
 
         let proxyIP;

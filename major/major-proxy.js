@@ -162,7 +162,6 @@ class GLaDOS {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-
     formatProxy(proxy) {
         // from ip:port:user:pass to http://user:pass@ip:port
         const parts = proxy.split(':');
