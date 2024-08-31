@@ -10,6 +10,8 @@ Airdrop tools for telegram bot
 
 ✅ [Cats](t.me/catsgang_bot/join?startapp=iCkXghxaEvb_qo6M_CNEy)
 
+✅ [Nomis](https://t.me/NomisAppBot/app?startapp=ref_8hl9ssTJVK)
+
 ## Set up
 Required: Node.js and Python
 
