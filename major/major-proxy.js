@@ -1,5 +1,6 @@
 const fs = require('fs');
 const axios = require('axios');
+const path = require('path');
 const colors = require('colors');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 
@@ -12,7 +13,7 @@ class GLaDOS {
         this.rouletteUrl = 'https://major.glados.app/api/roulette';
         this.holdCoinsUrl = 'https://major.glados.app/api/bonuses/coins/';
         this.tasksUrl = 'https://major.glados.app/api/tasks/';
-        this.proxies = fs.readFileSync('proxy.txt', 'utf8').split('\n').filter(Boolean);
+        this.proxies = null;
     }
 
     headers(token = null) {
@@ -67,7 +68,7 @@ class GLaDOS {
 
     async makeRequest(method, url, data = null, token = null, proxyIndex) {
         const headers = this.headers(token);
-        const proxy = this.proxies[proxyIndex];
+        const proxy = this.formatProxy(this.proxies[proxyIndex]);
         const httpsAgent = new HttpsProxyAgent(proxy);
 
         try {
@@ -161,9 +162,28 @@ class GLaDOS {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+
+    formatProxy(proxy) {
+        // from ip:port:user:pass to http://user:pass@ip:port
+        const parts = proxy.split(':');
+        if (parts.length === 4) {
+          const formatProxy = `http://${parts[2]}:${parts[3]}@${parts[0]}:${parts[1]}`
+          this.log(`Format Proxy: ${proxy} => ${formatProxy}`, 'info');
+          return formatProxy;
+        } else {
+          const formatProxy = `http://${parts[0]}:${parts[1]}`;
+          this.log(`Format Proxy: ${proxy} => ${formatProxy}`, 'info');
+          return formatProxy;
+        }
+      }
+
     async main() {
-        const dataFile = 'data.txt';
+        const dataFile = path.join(__dirname, './../data/major.txt');
         const data = fs.readFileSync(dataFile, 'utf8')
+            .split('\n')
+            .filter(Boolean);
+        const proxyFile = path.join(__dirname, './../data/proxy.txt');
+        this.proxies = fs.readFileSync(proxyFile, 'utf8')
             .split('\n')
             .filter(Boolean);
 
@@ -173,7 +193,7 @@ class GLaDOS {
                 const proxyIndex = i % this.proxies.length;
 
                 try {
-                    const proxyIP = await this.checkProxyIP(this.proxies[proxyIndex]);
+                    const proxyIP = await this.checkProxyIP(this.formatProxy(this.proxies[proxyIndex]));
                     const authResult = await this.authenticate(init_data, proxyIndex);
                     
                     if (authResult) {

@@ -289,6 +289,20 @@ class GameBot {
     }))
   }
 
+  formatProxy(proxy) {
+    // from ip:port:user:pass to http://user:pass@ip:port
+    const parts = proxy.split(':');
+    if (parts.length === 4) {
+      const formatProxy = `http://${parts[2]}:${parts[3]}@${parts[0]}:${parts[1]}`
+      this.log(`Format Proxy: ${proxy} => ${formatProxy}`, 'info');
+      return formatProxy;
+    } else {
+      const formatProxy = `http://${parts[0]}:${parts[1]}`;
+      this.log(`Format Proxy: ${proxy} => ${formatProxy}`, 'info');
+      return formatProxy;
+    }
+  }
+
   async main() {
     const dataFile = path.join(__dirname, './../data/blum.txt');
     const queryIds = fs.readFileSync(dataFile, 'utf8')
@@ -301,13 +315,12 @@ class GameBot {
         .split('\n')
         .filter(Boolean);
 
-    const nhiemvu = await this.askQuestion('Bạn có muốn làm nhiệm vụ không? (y/n): ');
-    const hoinhiemvu = nhiemvu.toLowerCase() === 'y';
+    const hoinhiemvu = 'y';
 
     while (true) {
       for (let i = 0; i < queryIds.length; i++) {
         this.queryId = queryIds[i];
-        this.proxy = proxies[i];
+        this.proxy = this.formatProxy(proxies[i]);
         this.proxyAgent = new HttpsProxyAgent(this.proxy);
 
         let proxyIP;
