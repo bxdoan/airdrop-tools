@@ -280,19 +280,12 @@ class GameBot {
     }
   }
 
-  askQuestion(query) {
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
-    return new Promise(resolve => rl.question(query, ans => {
-        rl.close();
-        resolve(ans);
-    }))
-  }
-
   formatProxy(proxy) {
     // from ip:port:user:pass to http://user:pass@ip:port
+    // if http format, just keep it
+    if (proxy.startsWith('http')) {
+      return proxy;
+    }
     const parts = proxy.split(':');
     if (parts.length === 4) {
       return `http://${parts[2]}:${parts[3]}@${parts[0]}:${parts[1]}`
@@ -349,7 +342,7 @@ class GameBot {
           continue;
         }
 
-        console.log(`========== Tài khoản ${i + 1} | ${userInfo.username.green} | ip: ${proxyIP} ==========`);
+        this.log(`========== Tài khoản ${i + 1} | ${userInfo.username.green} | ip: ${proxyIP} ==========`, 'success');
         
         const balanceInfo = await this.getBalance();
         if (balanceInfo) {
@@ -364,7 +357,7 @@ class GameBot {
             } else {
                 const endTime = DateTime.fromMillis(balanceInfo.farming.endTime);
                 const formattedEndTime = endTime.setZone('Asia/Ho_Chi_Minh').toFormat('dd/MM/yyyy HH:mm:ss');
-                this.log(`Thời gian hoàn thành farm: ${formattedEndTime}`, 'info');
+                this.log(`Thời gian hoàn thành farm: ${formattedEndTime} `, 'info');
                 if (i === 0) {
                   this.firstAccountEndTime = endTime;
                 }
@@ -381,7 +374,7 @@ class GameBot {
                     }
                 } else {
                     const timeLeft = endTime.diff(currentTime).toFormat('hh:mm:ss');
-                    this.log(`Thời gian còn lại để farming: ${timeLeft}`, 'info');
+                    this.log(`Thời gian còn lại để farming: ${timeLeft} đã được $${balanceInfo.farming.balance}`, 'info');
                 }
             }
         } else {
@@ -479,8 +472,8 @@ class GameBot {
           this.log('Không có vé chơi game', 'info');
         }
 
-        this.log(`Hoàn thành xử lý tài khoản ${userInfo.username}`, 'success');
-        console.log(''); 
+        this.log(`==== Hoàn thành xử lý tài khoản ${i + 1} | ${userInfo.username.green} | ip: ${proxyIP} ======`, 'success');
+        console.log('');
       }
 
       if (this.firstAccountEndTime) {

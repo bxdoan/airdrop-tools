@@ -164,15 +164,14 @@ class GLaDOS {
 
     formatProxy(proxy) {
         // from ip:port:user:pass to http://user:pass@ip:port
+        if (proxy.startsWith('http')) {
+            return proxy;
+        }
         const parts = proxy.split(':');
         if (parts.length === 4) {
-          const formatProxy = `http://${parts[2]}:${parts[3]}@${parts[0]}:${parts[1]}`
-          this.log(`Format Proxy: ${proxy} => ${formatProxy}`, 'info');
-          return formatProxy;
+          return `http://${parts[2]}:${parts[3]}@${parts[0]}:${parts[1]}`
         } else {
-          const formatProxy = `http://${parts[0]}:${parts[1]}`;
-          this.log(`Format Proxy: ${proxy} => ${formatProxy}`, 'info');
-          return formatProxy;
+          return `http://${parts[0]}:${parts[1]}`;
         }
       }
 
