@@ -11,13 +11,20 @@ Airdrop tools for telegram bot
 ✅ [Cats](t.me/catsgang_bot/join?startapp=iCkXghxaEvb_qo6M_CNEy)
 
 ## Set up
-create data directory in `./data`
+Required: Node.js and Python
 
-create data file in `./data/blum.txt` with format 
+Create data directory in `./data`
+
+Create data file in `./data/blum.txt` with format 
 `query_id=xxxx or user_id=xxxx`
+
+Install extension `./bypasstele` into your web browser and get query_id
+![image](imgs/get_query_id.jpg)
 
     Optional: create proxy file in `./data/proxy.txt`  with format `ip:port:username:password`
 
+
+## Run
 ```sh
 npm install
 node blum.js
