@@ -8,8 +8,9 @@ const { DateTime } = require('luxon');
 class GameBot {
   constructor() {
     this.queryId = null;
-    this.token = null;
     this.userInfo = null;
+    this.reference = null;
+    this.telegram_id = null;
     this.currentGameId = null;
     this.firstAccountEndTime = null;
   }
@@ -33,12 +34,20 @@ class GameBot {
 
   async headers(token = null) {
     const headers = {
+      'authority': 'bot.czpepe.lol',
+      'accept-encoding': 'gzip, deflate, br, zstd',
       'accept': 'application/json, text/plain, */*',
       'accept-language': 'en-US,en;q=0.9',
-      'content-type': 'application/json',
-      'origin': 'https://telegram.blum.codes',
-      'referer': 'https://telegram.blum.codes/',
+      'content-type': 'text/plain;charset=UTF-8',
+      'origin': 'https://bot.czpepe.lol/',
+      'referer': 'https://bot.czpepe.lol/',
       'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0',
+      'sec-ch-ua': `" Not A;Brand";v="99", "Chromium";v="96", "Google Chrome";v="96"`,
+      'sec-ch-ua-mobile': '?0',
+      'sec-ch-ua-platform': `"Windows"`,
+      'sec-fetch-mode': 'cors',
+      'sec-fetch-dest': 'empty',
+      'sec-fetch-site': 'same-origin',
     };
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
@@ -47,16 +56,17 @@ class GameBot {
   }
 
   async getNewToken() {
-    const url = 'https://gateway.blum.codes/v1/auth/provider/PROVIDER_TELEGRAM_MINI_APP';
-    const data = JSON.stringify({ query: this.queryId });
+    const url = 'https://bot.czpepe.lol/api/join/';
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const response = await axios.post(url, data, { headers: await this.headers() });
+        const response = await axios.post(url, this.queryId, { headers: await this.headers() });
         if (response.status === 200) {
-          this.log('Đăng nhập thành công', 'success');
-          this.token = response.data.token.refresh;
-          return this.token;
+          this.userInfo = response.data;
+          this.log(`Đăng nhập ${this.userInfo.username} thành công`, 'success');
+          this.reference = response.data.reference;
+          this.telegram_id = response.data.telegram_id;
+          return this.userInfo;
         } else {
           this.log(JSON.stringify(response.data), 'warning');
           this.log(`Lấy token thất bại, thử lại lần thứ ${attempt}`, 'warning');
@@ -205,7 +215,7 @@ class GameBot {
 
   async getTasks() {
     try {
-      const response = await axios.get('https://game-domain.blum.codes/api/v1/tasks', { headers: await this.headers(this.token) });
+      const response = await axios.get(`https://bot.czpepe.lol/api/tasks/${this.queryId}`, { headers: await this.headers(this.token) });
       if (response.status === 200) {
         return response.data;
       } else {
@@ -249,15 +259,7 @@ class GameBot {
   }
 
   async main() {
-    const nameFile = path.basename(__filename).split('/').pop().split('.')[0];
-    const dataFile = `./../data/${nameFile}.txt`;
-    // if not exist file, stop
-
-    if (!fs.existsSync(dataFile)) {
-        this.log(`Không tìm thấy file dữ liệu ${name_file}.txt`, 'error');
-        return;
-    }
-
+    const dataFile = path.join(__dirname, './../data/czpepe.txt');
     const queryIds = fs.readFileSync(dataFile, 'utf8')
         .replace(/\r/g, '')
         .split('\n')
@@ -267,154 +269,171 @@ class GameBot {
     // const hoinhiemvu = nhiemvu.toLowerCase() === 'y';
     const hoinhiemvu = 'y';
 
-    for (let i = 0; i < queryIds.length; i++) {
-      this.queryId = queryIds[i];
+    while (true) {
+      for (let i = 0; i < queryIds.length; i++) {
+        this.queryId = queryIds[i];
 
-      const token = await this.getNewToken();
-      if (!token) {
-        this.log('Không thể lấy token, bỏ qua tài khoản này', 'error');
-        continue;
-      }
-
-      const userInfo = await this.getUserInfo();
-      if (userInfo === null) {
-        this.log('Không thể lấy thông tin người dùng, bỏ qua tài khoản này', 'error');
-        continue;
-      }
-
-      console.log(`========== Tài khoản ${i + 1} | ${userInfo.username.green} ==========`);
-
-      const balanceInfo = await this.getBalance();
-      if (balanceInfo) {
-          this.log('Đang lấy thông tin....', 'info');
-          this.log(`Số dư: ${balanceInfo.availableBalance}`, 'success');
-          this.log(`Vé chơi game: ${balanceInfo.playPasses}`, 'success');
-
-          if (!balanceInfo.farming) {
-              const farmingResult = await this.startFarming();
-              if (farmingResult) {
-                  this.log('Đã bắt đầu farming thành công!', 'success');
-              }
-          } else {
-              const endTime = DateTime.fromMillis(balanceInfo.farming.endTime);
-              const formattedEndTime = endTime.setZone('Asia/Ho_Chi_Minh').toFormat('dd/MM/yyyy HH:mm:ss');
-              this.log(`Thời gian hoàn thành farm: ${formattedEndTime}`, 'info');
-              if (i === 0) {
-                this.firstAccountEndTime = endTime;
-              }
-              const currentTime = DateTime.now();
-              if (currentTime > endTime) {
-                  const claimBalanceResult = await this.claimBalance();
-                  if (claimBalanceResult) {
-                      this.log('Claim farm thành công!', 'success');
-                  }
-
-                  const farmingResult = await this.startFarming();
-                  if (farmingResult) {
-                      this.log('Đã bắt đầu farming thành công!', 'success');
-                  }
-              } else {
-                  const timeLeft = endTime.diff(currentTime).toFormat('hh:mm:ss');
-                  this.log(`Thời gian còn lại để farming: ${timeLeft}`, 'info');
-              }
-          }
-      } else {
-          this.log('Không thể lấy thông tin số dư', 'error');
-      }
-
-      if (hoinhiemvu) {
-        const taskListResponse = await this.getTasks();
-
-        if (taskListResponse && Array.isArray(taskListResponse) && taskListResponse.length > 0) {
-          let allTasks = taskListResponse.flatMap(section => section.tasks || []);
-
-          this.log('Đã lấy danh sách nhiệm vụ', 'info');
-
-          const excludedTaskId = "5daf7250-76cc-4851-ac44-4c7fdcfe5994";
-          allTasks = allTasks.filter(task => task.id !== excludedTaskId);
-          console.log('[*] Tổng số nhiệm vụ:', allTasks.length);
-          const notStartedTasks = allTasks.filter(task => task.status === "NOT_STARTED");
-          this.log(`Số lượng nhiệm vụ chưa bắt đầu: ${notStartedTasks.length}`, 'info');
-          for (const task of notStartedTasks) {
-            this.log(`Bắt đầu nhiệm vụ: ${task.title}`, 'info');
-
-            const startResult = await this.startTask(task.id);
-            if (startResult) {
-              this.log(`Đã bắt đầu nhiệm vụ: ${task.title}`, 'success');
-            } else {
-//                this.log(`Không thể bắt đầu nhiệm vụ: ${task.title}`, 'error');
-              continue;
-            }
-
-            await this.Countdown(3);
-
-            const claimResult = await this.claimTask(task.id);
-            if (claimResult && claimResult.status === "FINISHED") {
-              this.log(`Làm nhiệm vụ ${task.title.yellow}${`... trạng thái: thành công!`.green}`, 'success');
-            } else {
-              this.log(`Không thể nhận phần thưởng cho nhiệm vụ: ${task.title.yellow}`, 'error');
-            }
-          }
-        } else {
-          this.log('Không thể lấy danh sách nhiệm vụ hoặc danh sách nhiệm vụ trống', 'error');
+        const token = await this.getNewToken();
+        if (!token) {
+          this.log('Không thể lấy token, bỏ qua tài khoản này', 'error');
+          continue;
         }
-      }
 
-      const dailyRewardResult = await this.checkDailyReward();
-      if (dailyRewardResult) {
-        this.log('Đã nhận phần thưởng hàng ngày!', 'success');
-      }
-
-      const friendBalanceInfo = await this.checkBalanceFriend();
-      if (friendBalanceInfo) {
-        this.log(`Số dư bạn bè: ${friendBalanceInfo.amountForClaim}`, 'info');
-        if (friendBalanceInfo.amountForClaim > 0) {
-          const claimFriendBalanceResult = await this.claimBalanceFriend();
-          if (claimFriendBalanceResult) {
-            this.log('Đã nhận số dư bạn bè thành công!', 'success');
-          }
-        } else {
-          this.log('Không có số dư bạn bè để nhận!', 'info');
+        const userInfo = await this.getUserInfo();
+        if (userInfo === null) {
+          this.log('Không thể lấy thông tin người dùng, bỏ qua tài khoản này', 'error');
+          continue;
         }
-      } else {
-        this.log('Không thể kiểm tra số dư bạn bè!', 'error');
-      }
 
-      if (balanceInfo && balanceInfo.playPasses > 0) {
-        for (let j = 0; j < balanceInfo.playPasses; j++) {
-          let playAttempts = 0;
-          const maxAttempts = 5;
+        console.log(`========== Tài khoản ${i + 1} | ${userInfo.username.green} ==========`);
+        
+        const balanceInfo = await this.getBalance();
+        if (balanceInfo) {
+            this.log('Đang lấy thông tin....', 'info');
+            this.log(`Số dư: ${balanceInfo.availableBalance}`, 'success');
+            this.log(`Vé chơi game: ${balanceInfo.playPasses}`, 'success');
 
-          while (playAttempts < maxAttempts) {
-            try {
-              const playResult = await this.playGame();
-              if (playResult) {
-                this.log(`Bắt đầu chơi game lần thứ ${j + 1}...`, 'success');
-                await this.Countdown(30);
-                const claimGameResult = await this.claimGame(2000);
-                if (claimGameResult) {
-                  this.log(`Đã nhận phần thưởng game lần thứ ${j + 1} thành công!`, 'success');
+            if (!balanceInfo.farming) {
+                const farmingResult = await this.startFarming();
+                if (farmingResult) {
+                    this.log('Đã bắt đầu farming thành công!', 'success');
                 }
-                break;
-              }
-            } catch (error) {
-              playAttempts++;
-              this.log(`Không thể chơi game lần thứ ${j + 1}, lần thử ${playAttempts}: ${error.message}`, 'warning');
-              if (playAttempts < maxAttempts) {
-                this.log(`Đang thử lại...`, 'info');
-                await this.Countdown(5);
+            } else {
+                const endTime = DateTime.fromMillis(balanceInfo.farming.endTime);
+                const formattedEndTime = endTime.setZone('Asia/Ho_Chi_Minh').toFormat('dd/MM/yyyy HH:mm:ss');
+                this.log(`Thời gian hoàn thành farm: ${formattedEndTime}`, 'info');
+                if (i === 0) {
+                  this.firstAccountEndTime = endTime;
+                }
+                const currentTime = DateTime.now();
+                if (currentTime > endTime) {
+                    const claimBalanceResult = await this.claimBalance();
+                    if (claimBalanceResult) {
+                        this.log('Claim farm thành công!', 'success');
+                    }
+
+                    const farmingResult = await this.startFarming();
+                    if (farmingResult) {
+                        this.log('Đã bắt đầu farming thành công!', 'success');
+                    }
+                } else {
+                    const timeLeft = endTime.diff(currentTime).toFormat('hh:mm:ss');
+                    this.log(`Thời gian còn lại để farming: ${timeLeft}`, 'info');
+                }
+            }
+        } else {
+            this.log('Không thể lấy thông tin số dư', 'error');
+        }
+
+        if (hoinhiemvu) {
+          const taskListResponse = await this.getTasks();
+
+          if (taskListResponse && Array.isArray(taskListResponse) && taskListResponse.length > 0) {
+            let allTasks = taskListResponse.flatMap(section => section.tasks || []);
+            
+            this.log('Đã lấy danh sách nhiệm vụ', 'info');
+
+            const excludedTaskId = "5daf7250-76cc-4851-ac44-4c7fdcfe5994";
+            allTasks = allTasks.filter(task => task.id !== excludedTaskId);
+            console.log('[*] Tổng số nhiệm vụ:', allTasks.length);
+            const notStartedTasks = allTasks.filter(task => task.status === "NOT_STARTED");
+            this.log(`Số lượng nhiệm vụ chưa bắt đầu: ${notStartedTasks.length}`, 'info');
+            for (const task of notStartedTasks) {
+              this.log(`Bắt đầu nhiệm vụ: ${task.title}`, 'info');
+
+              const startResult = await this.startTask(task.id);
+              if (startResult) {
+                this.log(`Đã bắt đầu nhiệm vụ: ${task.title}`, 'success');
               } else {
-                this.log(`Đã thử ${maxAttempts} lần không thành công, bỏ qua lượt chơi này`, 'error');
+//                this.log(`Không thể bắt đầu nhiệm vụ: ${task.title}`, 'error');
+                continue;
+              }
+
+              await this.Countdown(3);
+
+              const claimResult = await this.claimTask(task.id);
+              if (claimResult && claimResult.status === "FINISHED") {
+                this.log(`Làm nhiệm vụ ${task.title.yellow}${`... trạng thái: thành công!`.green}`, 'success');
+              } else {
+                this.log(`Không thể nhận phần thưởng cho nhiệm vụ: ${task.title.yellow}`, 'error');
+              }
+            }
+          } else {
+            this.log('Không thể lấy danh sách nhiệm vụ hoặc danh sách nhiệm vụ trống', 'error');
+          }
+        }
+
+        const dailyRewardResult = await this.checkDailyReward();
+        if (dailyRewardResult) {
+          this.log('Đã nhận phần thưởng hàng ngày!', 'success');
+        }
+
+        const friendBalanceInfo = await this.checkBalanceFriend();
+        if (friendBalanceInfo) {
+          this.log(`Số dư bạn bè: ${friendBalanceInfo.amountForClaim}`, 'info');
+          if (friendBalanceInfo.amountForClaim > 0) {
+            const claimFriendBalanceResult = await this.claimBalanceFriend();
+            if (claimFriendBalanceResult) {
+              this.log('Đã nhận số dư bạn bè thành công!', 'success');
+            }
+          } else {
+            this.log('Không có số dư bạn bè để nhận!', 'info');
+          }
+        } else {
+          this.log('Không thể kiểm tra số dư bạn bè!', 'error');
+        }
+        
+        if (balanceInfo && balanceInfo.playPasses > 0) {
+          for (let j = 0; j < balanceInfo.playPasses; j++) {
+            let playAttempts = 0;
+            const maxAttempts = 5;
+        
+            while (playAttempts < maxAttempts) {
+              try {
+                const playResult = await this.playGame();
+                if (playResult) {
+                  this.log(`Bắt đầu chơi game lần thứ ${j + 1}...`, 'success');
+                  await this.Countdown(30);
+                  const claimGameResult = await this.claimGame(2000);
+                  if (claimGameResult) {
+                    this.log(`Đã nhận phần thưởng game lần thứ ${j + 1} thành công!`, 'success');
+                  }
+                  break;
+                }
+              } catch (error) {
+                playAttempts++;
+                this.log(`Không thể chơi game lần thứ ${j + 1}, lần thử ${playAttempts}: ${error.message}`, 'warning');
+                if (playAttempts < maxAttempts) {
+                  this.log(`Đang thử lại...`, 'info');
+                  await this.Countdown(5);
+                } else {
+                  this.log(`Đã thử ${maxAttempts} lần không thành công, bỏ qua lượt chơi này`, 'error');
+                }
               }
             }
           }
+        } else {
+          this.log('Không có vé chơi game', 'info');
         }
-      } else {
-        this.log('Không có vé chơi game', 'info');
+
+        this.log(`Hoàn thành xử lý tài khoản ${userInfo.username}`, 'success');
+        console.log(''); 
       }
 
-      this.log(`Hoàn thành xử lý tài khoản ${ i+1 } ${userInfo.username}`, 'success');
-      console.log('');
+      if (this.firstAccountEndTime) {
+        const currentTime = DateTime.now();
+        const timeLeft = this.firstAccountEndTime.diff(currentTime).as('seconds');
+
+        if (timeLeft > 0) {
+          await this.Countdown(timeLeft);
+        } else {
+          this.log('Chờ 10 phút trước khi bắt đầu vòng mới...', 'info');
+          await this.Countdown(600);
+        }
+      } else {
+        this.log('Chờ 10 phút trước khi bắt đầu vòng mới...', 'info');
+        await this.Countdown(600);
+      }
     }
   }
 }
