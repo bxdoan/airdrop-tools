@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const axios = require('axios');
 const colors = require('colors');
 
@@ -173,6 +174,7 @@ class GLaDOS {
         const name_file = path.basename(__filename).split('/').pop().split('.')[0];
         const dataFile = `./../data/${name_file}.txt`;
         const data = fs.readFileSync(dataFile, 'utf8')
+            .replace(/\r/g, '')
             .split('\n')
             .filter(Boolean);
 
@@ -226,9 +228,11 @@ class GLaDOS {
                         }
                     }
 
+                    console.log(`========== Hoàn thành xử lý tài khoản ${i + 1} | ${first_name.green} ==========`);
                 } else {
                     this.log(`Không đọc được dữ liệu tài khoản ${i + 1}`);
                 }
+
 
                 if (i < data.length - 1) {
                     await this.waitWithCountdown(3);

@@ -405,18 +405,9 @@ class GameBot {
         this.log('Không có vé chơi game', 'info');
       }
 
-      this.log(`Hoàn thành xử lý tài khoản ${userInfo.username}`, 'success');
+      this.log(`Hoàn thành xử lý tài khoản ${ i+1 } ${userInfo.username}`, 'success');
       console.log('');
     }
-
-    // if (this.firstAccountEndTime) {
-    //   const currentTime = DateTime.now();
-    //   const timeLeft = this.firstAccountEndTime.diff(currentTime).as('seconds');
-    //
-    //   if (timeLeft > 0) {
-    //     await this.Countdown(timeLeft);
-    //   }
-    // }
   }
 }
 
