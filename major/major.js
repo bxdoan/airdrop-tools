@@ -178,7 +178,8 @@ class GLaDOS {
             .split('\n')
             .filter(Boolean);
 
-        for (let i = 0; i < data.length; i++) {
+        while (true) {
+            for (let i = 0; i < data.length; i++) {
                 const init_data = data[i].trim();
 
                 const authResult = await this.authenticate(init_data);
@@ -238,6 +239,8 @@ class GLaDOS {
                     await this.waitWithCountdown(3);
                 }
             }
+            await this.waitWithCountdown(28850);
+        }
     }
 }
 
