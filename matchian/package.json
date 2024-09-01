@@ -3,6 +3,7 @@
     "axios": "^1.7.2",
     "colors": "^1.4.0",
     "https-proxy-agent": "^7.0.5",
+    "minimist": "^1.2.5",
     "luxon": "^3.5.0"
   }
 }

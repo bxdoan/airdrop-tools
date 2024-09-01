@@ -29,7 +29,7 @@ Required: Node.js and Python
 Create data directory in `./data`
 
 Create data file in `./data/blum.txt` with format 
-`query_id=xxxx or user_id=xxxx`
+`query_id=xxxx or user=xxxx`
 
 Install extension `./bypasstele` into your web browser and get `query_id`
 ![image](imgs/get_query_id.jpg)

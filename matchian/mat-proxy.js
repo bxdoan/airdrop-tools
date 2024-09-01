@@ -1,5 +1,6 @@
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const axios = require('axios');
+const path = require('path');
 const { parse } = require('querystring');
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -25,7 +26,8 @@ const headers = {
 class Matchain {
     constructor(proxies) {
         this.headers = { ...headers };
-        this.proxies = proxies;
+        this.listProxies = [];
+        this.indexProxies = 0;
         this.autogame = true;
     }
 
@@ -444,6 +446,28 @@ class Matchain {
 		}
 	}
 
+    formatProxy(proxy) {
+        // from ip:port:user:pass to http://user:pass@ip:port
+        if (proxy.startsWith('http')) {
+            return proxy;
+        }
+        const parts = proxy.split(':');
+        if (parts.length === 4) {
+          return `http://${parts[2]}:${parts[3]}@${parts[0]}:${parts[1]}`
+        } else {
+          return `http://${parts[0]}:${parts[1]}`;
+        }
+    }
+
+    getProxy() {
+        const proxy = this.listProxies[this.indexProxies];
+        this.indexProxies++;
+        if (this.indexProxies >= this.listProxies.length) {
+          this.indexProxies = 0;
+        }
+        return proxy;
+    }
+
     async main() {
         const args = require('minimist')(process.argv.slice(2));
         if (!args['--marin']) {
@@ -455,11 +479,8 @@ class Matchain {
         }
         this.autogame = true;
 
-
-        const proxies = this.load_proxies(args['--proxy'] || 'proxy.txt');
-
         while (true) {
-            const dataFile = path.join(__dirname, './../data/nomis.txt');
+            const dataFile = path.join(__dirname, './../data/matchain.txt');
             const proxyFile = path.join(__dirname, './../data/proxy.txt');
             const data = fs.readFileSync(dataFile, 'utf8')
                 .replace(/\r/g, '')
@@ -473,7 +494,7 @@ class Matchain {
             const list_countdown = [];
             const start = Math.floor(Date.now() / 1000);
             for (let [no, item] of data.entries()) {
-                const proxy = proxies[no % proxies.length];
+                const proxy = this.formatProxy(this.getProxy());
                 const parser = this.dancay(item);
                 const userEncoded = decodeURIComponent(parser['user']);
                 let user;
