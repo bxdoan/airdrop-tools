@@ -20,6 +20,8 @@ Click the link below to join the bot and get the referral link
 
 ✅ [Matchain](https://t.me/MatchQuestBot/start?startapp=95c2d862b8f59dea782f41aaf4c364ab)
 
+✅ [MoonbergAI](https://t.me/moonbergai_bot/join?startapp=nlMsKP0ZWe)
+
 
 ## Set up
 Required: Node.js and Python
@@ -42,7 +44,7 @@ node blum.js
 
 // or node blum-proxy.js for proxy
 ```
-This is the same for Major, CZPEPE, Cats, Nomis, Fintopio, Banana, Matchain
+This is the same for Major, CZPEPE, Cats, Nomis, Fintopio, Banana, Matchain, Moonbergai
 
 ## Contact
 
