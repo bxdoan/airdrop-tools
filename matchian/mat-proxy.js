@@ -31,7 +31,7 @@ class Matchain {
         this.autogame = true;
     }
 
-    async http(url, headers, data = null, proxy) {
+    async http(url, headers, data = null, proxy, method = 'get') {
         const agent = proxy ? new HttpsProxyAgent(proxy) : null;
         const config = {
             headers,
@@ -39,8 +39,13 @@ class Matchain {
         };
         while (true) {
             try {
-                const res = data ? await axios.post(url, data, config) : await axios.get(url, config);
-                return res;
+                if (data) {
+                    return await axios.post(url, data, config);
+                } else if (method === 'options') {
+                    return await axios.options(url, config);
+                } else {
+                    return await axios.get(url, config);
+                }
             } catch (error) {
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
@@ -268,39 +273,12 @@ class Matchain {
 
 		return Math.round(next_claim / 1000 - Date.now() / 1000) + 30;
 	}
-    
-
-    load_data(file) {
-        const data = fs.readFileSync(file, 'utf-8')
-            .split('\n')
-            .map(line => line.trim())
-            .filter(line => line !== '');
-
-        if (data.length === 0) {
-            this.log('Không tìm thấy tài khoản nào!', 'warning');
-            return false;
-        }
-
-        return data;
-    }
-
-    load_proxies(file) {
-        const proxies = fs.readFileSync(file, 'utf-8')
-            .split('\n')
-            .map(line => line.trim())
-            .filter(line => line !== '');
-
-        if (proxies.length === 0) {
-            this.log('Không tìm thấy proxy nào!', 'warning');
-            return false;
-        }
-
-        return proxies;
-    }
 
     async getTaskList(uid, proxy) {
         const url = "https://tgapp-api.matchain.io/api/tgapp/v1/point/task/list";
         const payload = JSON.stringify({ "uid": uid });
+        // call OPTIONS method first
+        await this.http(url, this.headers, null, proxy, 'options');
 
         let res = await this.http(url, this.headers, payload, proxy);
         if (res.status !== 200) {
@@ -316,7 +294,8 @@ class Matchain {
         }
 
 		const extraTasks = Array.isArray(data['Extra Tasks']) ? data['Extra Tasks'] : [];
-		const allTasks = [...data.Tasks, ...extraTasks];
+		const matchainTasks = Array.isArray(data['Matchain Ecosystem']) ? data['Matchain Ecosystem'] : [];
+		const allTasks = [...data.Tasks, ...matchainTasks, ...extraTasks];
 		const filteredTasks = allTasks.filter(task => task.complete === false && task.name !== "join_match_group");
 		const taskNames = filteredTasks.map(task => task.name);
 		return taskNames;
@@ -324,6 +303,9 @@ class Matchain {
 
     async completeTask(uid, taskType, proxy) {
         const url = "https://tgapp-api.matchain.io/api/tgapp/v1/point/task/complete";
+        // call OPTIONS method first
+        await this.http(url, this.headers, null, proxy, 'options');
+
         const payload = JSON.stringify({ "uid": uid, "type": taskType });
     
         let res = await this.http(url, this.headers, payload, proxy);
