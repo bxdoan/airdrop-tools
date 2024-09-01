@@ -4,6 +4,7 @@ const path = require('path');
 const colors = require('colors');
 const readline = require('readline');
 const { DateTime } = require('luxon');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 
 class GameBot {
   constructor() {
@@ -11,6 +12,8 @@ class GameBot {
     this.userInfo = null;
     this.reference = null;
     this.telegram_id = null;
+    this.listProxies = [];
+    this.indexProxies = 0;
   }
 
   log(msg, type = 'info') {
@@ -53,12 +56,19 @@ class GameBot {
     return headers;
   }
 
-  async getNewToken() {
+  async getNewToken(proxy) {
     const url = 'https://bot.czpepe.lol/api/join/';
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const response = await axios.post(url, this.queryId, { headers: await this.headers() });
+        const headers = await this.headers();
+        const config = {
+          url,
+          method: 'post',
+          headers,
+          data: this.queryId
+        };
+        const response = await this.requestWithProxy(config, proxy);
         if (response.status === 200) {
           this.userInfo = response.data;
           this.reference = response.data.reference;
@@ -86,12 +96,16 @@ class GameBot {
     console.log('');
   }
 
-  async getLeaderboard() {
+  async getLeaderboard(proxy) {
+    const url = `https://bot.czpepe.lol/api/leaderboard/?user_id=${this.telegram_id}`
     try {
-      const response = await axios.get(
-          `https://bot.czpepe.lol/api/leaderboard/?user_id=${this.telegram_id}`,
-          {headers: await this.headers(this.token)}
-      );
+      const headers = await this.headers();
+      const config = {
+        url,
+        method: 'get',
+        headers,
+      }
+      const response = await this.requestWithProxy(config, proxy);
       if (response.status === 200) {
         return response.data;
       } else {
@@ -104,11 +118,16 @@ class GameBot {
     }
   }
 
-  async getTasks() {
+  async getTasks(proxy) {
+    const url = `https://bot.czpepe.lol/api/tasks/?user_id=${this.telegram_id}&reference=${this.reference}`
     try {
-      const response = await axios.get(
-          `https://bot.czpepe.lol/api/tasks/?user_id=${this.telegram_id}&reference=${this.reference}`,
-          {headers: await this.headers(this.token)});
+      const headers = await this.headers();
+      const config = {
+        url,
+        method: 'post',
+        headers,
+      }
+      const response = await this.requestWithProxy(config, proxy);
       if (response.status === 200) {
         return response.data;
       } else {
@@ -156,49 +175,112 @@ class GameBot {
     }
   }
 
+  async checkProxyIP(proxy) {
+      try {
+          const proxyAgent = new HttpsProxyAgent(proxy);
+          const response = await axios.get('https://api.ipify.org?format=json', {
+              httpsAgent: proxyAgent
+          });
+          if (response.status === 200) {
+              return response.data.ip;
+          } else {
+              throw new Error(`Không thể kiểm tra IP của proxy. Status code: ${response.status}`);
+          }
+      } catch (error) {
+          throw new Error(`Error khi kiểm tra IP của proxy: ${error.message}`);
+      }
+  }
+
+  async requestWithProxy(config, proxy) {
+      const agent = new HttpsProxyAgent(proxy);
+      return axios({ ...config, httpsAgent: agent });
+  }
+
+  formatProxy(proxy) {
+      // from ip:port:user:pass to http://user:pass@ip:port
+      if (proxy.startsWith('http')) {
+          return proxy;
+      }
+      const parts = proxy.split(':');
+      if (parts.length === 4) {
+        return `http://${parts[2]}:${parts[3]}@${parts[0]}:${parts[1]}`
+      } else {
+        return `http://${parts[0]}:${parts[1]}`;
+      }
+  }
+
+  getProxy() {
+      const proxy = this.listProxies[this.indexProxies];
+      this.indexProxies++;
+      if (this.indexProxies >= this.listProxies.length) {
+        this.indexProxies = 0;
+      }
+      return proxy;
+  }
+
   async main() {
-    const dataFile = path.join(__dirname, './../data/czpepe.txt');
-    const queryIds = fs.readFileSync(dataFile, 'utf8')
+
+    while (true) {
+      const proxyFile = path.join(__dirname, './../data/proxy.txt');
+      this.listProxies = fs.readFileSync(proxyFile, 'utf8')
+        .replace(/\r/g, '')
+        .split('\n')
+        .filter(Boolean);
+        const dataFile = path.join(__dirname, './../data/czpepe.txt');
+      const queryIds = fs.readFileSync(dataFile, 'utf8')
         .replace(/\r/g, '')
         .split('\n')
         .filter(Boolean);
 
-    const hoinhiemvu = 'y';
-
-    while (true) {
       for (let i = 0; i < queryIds.length; i++) {
         this.queryId = queryIds[i];
+        const proxy = this.formatProxy(this.getProxy());
 
-        const token = await this.getNewToken();
+        let proxyIP = '';
+        try {
+            proxyIP = await this.checkProxyIP(proxy);
+        } catch (error) {
+            console.error('Lỗi khi kiểm tra IP của proxy:', error);
+        }
+
+        const token = await this.getNewToken(proxy);
         if (!token) {
-          this.log('Không thể lấy token, bỏ qua tài khoản này', 'error');
+          this.log(`Không thể lấy token, bỏ qua tài khoản ${i + 1} này`, 'error');
           continue;
         }
-        this.log(`========== Tài khoản ${i + 1} | ${this.userInfo.username} ==========`, 'success');
+        this.log(`========== Tài khoản ${i + 1} | ${this.userInfo.username} | ${proxyIP} =======`, 'success');
 
-        const tasks = await this.getTasks();
-        const leaderboard = await this.getLeaderboard();
+        const tasks = await this.getTasks(proxy);
+        const leaderboard = await this.getLeaderboard(proxy);
         if (leaderboard) {
-            this.log(`Xếp hạng: ${leaderboard.me.position} | Điểm: ${leaderboard.me.score}`, 'success');
+          this.log(`Xếp hạng: ${leaderboard.me.position} | Điểm: ${leaderboard.me.score}`, 'success');
         }
-        const rewards = await this.getRewards();
 
         if (tasks) {
-            // loop and doTask
-            for (const task of tasks) {
-              if (!task.complete) {
-                const result = await this.doTask(task.id, task.slug);
-                if (result) {
-                  this.log(`Làm nhiệm vụ ${task.id}: ${task.slug.yellow} được ${task.reward}`.green);
-                }
+          // count tasks have task.complete = false
+          let count = 0;
+          for (const task of tasks) {
+            if (!task.complete) {
+                count++;
+            }
+          }
+          this.log(`Số nhiệm vụ chưa hoàn thành: ${count}`, 'success');
+
+          // loop and doTask
+          for (const task of tasks) {
+            if (!task.complete) {
+              const result = await this.doTask(task.id, task.slug);
+              if (result) {
+                this.log(`Làm nhiệm vụ ${task.id}: ${task.slug.yellow} được ${task.reward}`.green);
               }
             }
+          }
         }
 
         this.log(`========== Tài khoản ${i + 1} | ${this.userInfo.username} thành công ==========`, 'success');
       }
 
-        await this.Countdown(86400);
+      await this.Countdown(6400);
 
     }
   }
