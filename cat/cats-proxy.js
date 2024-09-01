@@ -147,20 +147,20 @@ class CatsAPI {
     }
 
     async main() {
-        const dataFile = path.join(__dirname, './../data/cats.txt');
-        const data = fs.readFileSync(dataFile, 'utf8')
-            .split('\n')
-            .filter(Boolean);
-
-        const proxyFile = path.join(__dirname, './../data/proxy.txt');
-        this.listProxies = fs.readFileSync(proxyFile, 'utf8')
-            .replace(/\r/g, '')
-            .split('\n')
-            .filter(Boolean);
-
         const referralCode = 'iCkXghxaEvb_qo6M_CNEy'; // refcode
 
         while (true) {
+            const dataFile = path.join(__dirname, './../data/cats.txt');
+            const data = fs.readFileSync(dataFile, 'utf8')
+                .replace(/\r/g, '')
+                .split('\n')
+                .filter(Boolean);
+
+            const proxyFile = path.join(__dirname, './../data/proxy.txt');
+            this.listProxies = fs.readFileSync(proxyFile, 'utf8')
+                .replace(/\r/g, '')
+                .split('\n')
+                .filter(Boolean);
             for (let no = 0; no < data.length; no++) {
                 const authorization = data[no];
                 const proxy = this.formatProxy(this.getProxy());

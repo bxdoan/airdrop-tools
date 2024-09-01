@@ -2,6 +2,8 @@
 
 Airdrop tools for all telegram bot
 
+Click the link below to join the bot and get the referral link
+
 ✅ [Blum](https://t.me/blum/app?startapp=ref_KWlM6oGLsY)
 
 ✅ [Major](https://t.me/major/start?startapp=399199645)

@@ -466,13 +466,12 @@ class Matchain {
                 .split('\n')
                 .filter(Boolean);
             this.listProxies = fs.readFileSync(proxyFile, 'utf8')
-            .replace(/\r/g, '')
-            .split('\n')
-            .filter(Boolean);
+                .replace(/\r/g, '')
+                .split('\n')
+                .filter(Boolean);
 
             const list_countdown = [];
             const start = Math.floor(Date.now() / 1000);
-            const data = this.load_data(args['--data'] || 'data.txt');
             for (let [no, item] of data.entries()) {
                 const proxy = proxies[no % proxies.length];
                 const parser = this.dancay(item);
