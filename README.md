@@ -1,6 +1,6 @@
 # Airdrop-tools
 
-Airdrop tools for telegram bot
+Airdrop tools for all telegram bot
 
 ✅ [Blum](https://t.me/blum/app?startapp=ref_KWlM6oGLsY)
 
