@@ -211,20 +211,20 @@ class Nomis {
     }
 
     async main() {
-        const dataFile = path.join(__dirname, './../data/nomis.txt');
-        const proxyFile = path.join(__dirname, './../data/proxy.txt');
-        const data = fs.readFileSync(dataFile, 'utf8')
-            .replace(/\r/g, '')
-            .split('\n')
-            .filter(Boolean);
-        this.listProxies = fs.readFileSync(proxyFile, 'utf8')
-            .replace(/\r/g, '')
-            .split('\n')
-            .filter(Boolean);
-    
         let firstFarmCompleteTime = null;
     
         while (true) {
+            const dataFile = path.join(__dirname, './../data/nomis.txt');
+            const proxyFile = path.join(__dirname, './../data/proxy.txt');
+            const data = fs.readFileSync(dataFile, 'utf8')
+                .replace(/\r/g, '')
+                .split('\n')
+                .filter(Boolean);
+            this.listProxies = fs.readFileSync(proxyFile, 'utf8')
+                .replace(/\r/g, '')
+                .split('\n')
+                .filter(Boolean);
+
             for (let no = 0; no < data.length; no++) {
                 const appInitData = data[no];
                 const proxy = this.formatProxy(this.getProxy());

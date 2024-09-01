@@ -12,6 +12,8 @@ Airdrop tools for telegram bot
 
 ✅ [Nomis](https://t.me/NomisAppBot/app?startapp=ref_8hl9ssTJVK)
 
+✅ [Fintopio](https://t.me/fintopio/wallet?startapp=reflink-reflink_XP3STJDYcKqYmduP-)
+
 ## Set up
 Required: Node.js and Python
 
@@ -20,7 +22,7 @@ Create data directory in `./data`
 Create data file in `./data/blum.txt` with format 
 `query_id=xxxx or user_id=xxxx`
 
-Install extension `./bypasstele` into your web browser and get query_id
+Install extension `./bypasstele` into your web browser and get `query_id`
 ![image](imgs/get_query_id.jpg)
 
     Optional: create proxy file in `./data/proxy.txt`  with format `http://user:pass@ip:port` or `ip:port:username:password`
@@ -33,7 +35,7 @@ node blum.js
 
 // or node blum-proxy.js for proxy
 ```
-This is the sane for Major, CZPEPE, Cats
+This is the sane for Major, CZPEPE, Cats, Nomis, Fintopio
 
 ## Contact
 
