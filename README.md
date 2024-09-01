@@ -14,6 +14,11 @@ Airdrop tools for telegram bot
 
 ✅ [Fintopio](https://t.me/fintopio/wallet?startapp=reflink-reflink_XP3STJDYcKqYmduP-)
 
+✅ [Banana](https://t.me/OfficialBananaBot/banana?startapp=referral=TCJMSB)
+
+✅ [Matchain](https://t.me/MatchQuestBot/start?startapp=95c2d862b8f59dea782f41aaf4c364ab)
+
+
 ## Set up
 Required: Node.js and Python
 
@@ -35,7 +40,7 @@ node blum.js
 
 // or node blum-proxy.js for proxy
 ```
-This is the sane for Major, CZPEPE, Cats, Nomis, Fintopio
+This is the same for Major, CZPEPE, Cats, Nomis, Fintopio, Banana, Matchain
 
 ## Contact
 
