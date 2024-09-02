@@ -315,7 +315,8 @@ class GameBot {
         .split('\n')
         .filter(Boolean);
 
-    const hoinhiemvu = 'y';
+    const nhiemvu = await this.askQuestion('Bạn có muốn làm nhiệm vụ không? (y/n): ');
+    const hoinhiemvu = nhiemvu.toLowerCase() === 'y';
     while (true) {
       for (let i = 0; i < queryIds.length; i++) {
         this.queryId = queryIds[i];
