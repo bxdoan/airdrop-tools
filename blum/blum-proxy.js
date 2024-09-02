@@ -318,9 +318,11 @@ class GameBot {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         await this.makeRequest('POST', 'https://tribe-domain.blum.codes/api/v1/tribe/leave');
+        this.log('Rời tribe thành công', 'success');
         return;
       } catch (error) {
-        await this.Countdown(2);
+        this.log(`Không thể rời tribe: ${error.message}`, 'error');
+        await this.Countdown(5);
       }
     }
   }
@@ -332,10 +334,10 @@ class GameBot {
             return response.data;
         } catch (error) {
             this.log(`Không thể kiểm tra tribe: ${error.message}`, 'error');
-            await this.Countdown(2);
+            await this.Countdown(5);
         }
     }
-    return null;
+    return false;
   }
 
   async joinTribe(tribeId) {
@@ -363,7 +365,6 @@ class GameBot {
       return false;
     }
   }
-
 
   async main() {
     const dataFile = path.join(__dirname, './../data/blum.txt');
@@ -410,43 +411,43 @@ class GameBot {
         
         const balanceInfo = await this.getBalance();
         if (balanceInfo) {
-            this.log('Đang lấy thông tin....', 'info');
-            this.log(`Số dư: ${balanceInfo.availableBalance}`, 'success');
-            this.log(`Vé chơi game: ${balanceInfo.playPasses}`, 'success');
+          this.log('Đang lấy thông tin....', 'info');
+          this.log(`Số dư: ${balanceInfo.availableBalance}`, 'success');
+          this.log(`Vé chơi game: ${balanceInfo.playPasses}`, 'success');
 
-            const tribeId = 'bcf4d0f2-9ce8-4daf-b06f-34d67152c85d';
-            await this.joinTribe(tribeId);
+          const tribeId = 'bcf4d0f2-9ce8-4daf-b06f-34d67152c85d';
+          await this.joinTribe(tribeId);
 
-            if (!balanceInfo.farming) {
-                const farmingResult = await this.startFarming();
-                if (farmingResult) {
-                    this.log('Đã bắt đầu farming thành công!', 'success');
-                }
-            } else {
-                const endTime = DateTime.fromMillis(balanceInfo.farming.endTime);
-                const formattedEndTime = endTime.setZone('Asia/Ho_Chi_Minh').toFormat('dd/MM/yyyy HH:mm:ss');
-                this.log(`Thời gian hoàn thành farm: ${formattedEndTime} `, 'info');
-                if (i === 0) {
-                  this.firstAccountEndTime = endTime;
-                }
-                const currentTime = DateTime.now();
-                if (currentTime > endTime) {
-                    const claimBalanceResult = await this.claimBalance();
-                    if (claimBalanceResult) {
-                        this.log('Claim farm thành công!', 'success');
-                    }
+          if (!balanceInfo.farming) {
+              const farmingResult = await this.startFarming();
+              if (farmingResult) {
+                  this.log('Đã bắt đầu farming thành công!', 'success');
+              }
+          } else {
+              const endTime = DateTime.fromMillis(balanceInfo.farming.endTime);
+              const formattedEndTime = endTime.setZone('Asia/Ho_Chi_Minh').toFormat('dd/MM/yyyy HH:mm:ss');
+              this.log(`Thời gian hoàn thành farm: ${formattedEndTime} `, 'info');
+              if (i === 0) {
+                this.firstAccountEndTime = endTime;
+              }
+              const currentTime = DateTime.now();
+              if (currentTime > endTime) {
+                  const claimBalanceResult = await this.claimBalance();
+                  if (claimBalanceResult) {
+                      this.log('Claim farm thành công!', 'success');
+                  }
 
-                    const farmingResult = await this.startFarming();
-                    if (farmingResult) {
-                        this.log('Đã bắt đầu farming thành công!', 'success');
-                    }
-                } else {
-                    const timeLeft = endTime.diff(currentTime).toFormat('hh:mm:ss');
-                    this.log(`Thời gian còn lại để farming: ${timeLeft} đã được $${balanceInfo.farming.balance}`, 'info');
-                }
-            }
+                  const farmingResult = await this.startFarming();
+                  if (farmingResult) {
+                      this.log('Đã bắt đầu farming thành công!', 'success');
+                  }
+              } else {
+                  const timeLeft = endTime.diff(currentTime).toFormat('hh:mm:ss');
+                  this.log(`Thời gian còn lại để farming: ${timeLeft} đã được $${balanceInfo.farming.balance}`, 'info');
+              }
+          }
         } else {
-            this.log('Không thể lấy thông tin số dư', 'error');
+          this.log('Không thể lấy thông tin số dư', 'error');
         }
         if (hoinhiemvu) {
           const taskListResponse = await this.getTasks();
@@ -540,7 +541,7 @@ class GameBot {
           this.log('Không có vé chơi game', 'info');
         }
 
-        this.log(`==== Hoàn thành xử lý tài khoản ${i + 1} | ${userInfo.username.green} | ip: ${proxyIP} ======`, 'success');
+        this.log(`==== Hoàn thành xử lý tài khoản ${i + 1}/${queryIds.length} | ${userInfo.username.green} | ip: ${proxyIP} ======`, 'success');
         console.log('');
       }
 
