@@ -315,14 +315,19 @@ class GameBot {
   }
 
   async leaveTribe() {
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    for (let attempt = 1; attempt <= 10; attempt++) {
       try {
+        try {
+          await this.makeRequest('OPTIONS', 'https://tribe-domain.blum.codes/api/v1/tribe/leave');
+        } catch (error) {
+
+        }
         await this.makeRequest('POST', 'https://tribe-domain.blum.codes/api/v1/tribe/leave');
         this.log('Rời tribe thành công', 'success');
         return;
       } catch (error) {
         this.log(`Không thể rời tribe: ${error.message}`, 'error');
-        await this.Countdown(5);
+        await this.Countdown(30);
       }
     }
   }
@@ -334,7 +339,7 @@ class GameBot {
             return response.data;
         } catch (error) {
             this.log(`Không thể kiểm tra tribe: ${error.message}`, 'error');
-            await this.Countdown(5);
+            await this.Countdown(30);
         }
     }
     return false;
