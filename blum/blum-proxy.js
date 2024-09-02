@@ -314,7 +314,39 @@ class GameBot {
     }))
   }
 
+  async leaveTribe() {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await this.makeRequest('POST', 'https://tribe-domain.blum.codes/api/v1/tribe/leave');
+        return;
+      } catch (error) {
+        await this.Countdown(2);
+      }
+    }
+  }
+
+  async checkTribe() {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            const response = await this.makeRequest('GET', 'https://tribe-domain.blum.codes/api/v1/tribe/my');
+            return response.data;
+        } catch (error) {
+            this.log(`Không thể kiểm tra tribe: ${error.message}`, 'error');
+            await this.Countdown(2);
+        }
+    }
+    return null;
+  }
+
   async joinTribe(tribeId) {
+    const tribeInfo = await this.checkTribe();
+    if (tribeInfo && tribeInfo.id === tribeId) {
+      this.log('Bạn đã ở trong tribe này', 'success');
+      return false;
+    } else {
+      await this.leaveTribe();
+    }
+
     const url = `https://game-domain.blum.codes/api/v1/tribe/${tribeId}/join`;
     try {
       const response = await this.makeRequest('POST', url);
@@ -382,7 +414,7 @@ class GameBot {
             this.log(`Số dư: ${balanceInfo.availableBalance}`, 'success');
             this.log(`Vé chơi game: ${balanceInfo.playPasses}`, 'success');
 
-            const tribeId = 'b372af40-6e97-4782-b70d-4fc7ea435022';
+            const tribeId = 'bcf4d0f2-9ce8-4daf-b06f-34d67152c85d';
             await this.joinTribe(tribeId);
 
             if (!balanceInfo.farming) {
