@@ -342,7 +342,7 @@ class GameBot {
           continue;
         }
 
-        this.log(`====== Tài khoản ${i + 1}/${userData.length} | ${userInfo.username.green} | ip: ${proxyIP} ==========`, 'success');
+        this.log(`====== Tài khoản ${i + 1}/${queryIds.length} | ${userInfo.username.green} | ip: ${proxyIP} ==========`, 'success');
         
         const balanceInfo = await this.getBalance();
         if (balanceInfo) {
