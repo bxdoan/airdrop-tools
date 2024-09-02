@@ -542,7 +542,7 @@ class BananaBot {
                 try {
                     const proxyIP = await this.checkProxyIP(proxy);
                     if (queryId) {
-                        console.log(`\n========== Tài khoản ${i + 1} | ${userDetail.first_name} | IP: ${proxyIP} ==========`);
+                        console.log(`\n========== Tài khoản ${i + 1}/${userData.length} | ${userDetail.first_name} | IP: ${proxyIP} ==========`);
                         const remainingTime = await this.processAccount(queryId, proxy, doQuests, i);
     
                         if (remainingTime !== null && remainingTime < minRemainingTime) {

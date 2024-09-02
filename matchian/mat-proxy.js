@@ -489,7 +489,7 @@ class Matchain {
 				let proxyIP = '';
 				try {
 					proxyIP = await this.checkProxyIP(proxy);
-					console.log(`========== Tài khoản ${no + 1} | ${user['first_name'].green} | IP: ${proxyIP} ==========`);
+					console.log(`====== Tài khoản ${no + 1}/${data.length} | ${user['first_name'].green} | IP: ${proxyIP} ==========`);
 					const result = await this.login(item, proxy);
 					if (result) {
 						list_countdown.push(result);
