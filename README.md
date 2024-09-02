@@ -26,19 +26,18 @@ Click the link below to join the bot and get the referral link
 ## Set up
 Required: Node.js and Python
 
-Create data directory in `./data`
+1. Create data directory in `./data`
 
-Create data file in `./data/blum.txt` with format 
-`query_id=xxxx or user=xxxx`
+2. Install extension `./bypasstele` into your web browser
 
-Install extension `./bypasstele` into your web browser
 ![image](imgs/extension.jpg)
 
-Get `query_id` or `user` from the bot app
+3. Create data file in `./data/blum.txt` with format 
+`query_id=xxxx or user=xxxx`. Get `query_id` or `user` from the bot app
+
 ![image](imgs/get_query_id.jpg)
 
-    Optional: create proxy file in `./data/proxy.txt`  with format `http://user:pass@ip:port` or `ip:port:username:password`
-
+4. Optional: create proxy file in `./data/proxy.txt`  with format `http://user:pass@ip:port` or `ip:port:username:password`
 
 ## Run
 
