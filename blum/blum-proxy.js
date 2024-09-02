@@ -315,7 +315,7 @@ class GameBot {
   }
 
   async leaveTribe() {
-    for (let attempt = 1; attempt <= 10; attempt++) {
+    for (let attempt = 1; attempt <= 5; attempt++) {
       try {
         try {
           await this.makeRequest('OPTIONS', 'https://tribe-domain.blum.codes/api/v1/tribe/leave');
@@ -326,7 +326,7 @@ class GameBot {
         this.log('Rời tribe thành công', 'success');
         return;
       } catch (error) {
-        this.log(`Không thể rời tribe: ${error.message}`, 'error');
+        this.log(`Không thể rời tribe ${attempt}: ${error.message} `, 'error');
         await this.Countdown(30);
       }
     }
