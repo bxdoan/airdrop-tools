@@ -188,7 +188,7 @@ class CatsAPI {
                 try {
                     const userInfoResponse = await this.getUserInfo(authorization, proxy);
                     const userInfo = userInfoResponse.data;
-                    console.log(`========== Tài khoản ${no + 1} | ${userInfo.firstName} | ip: ${proxyIP} ==========`.green);
+                    console.log(`========== Tài khoản ${no + 1}}/${data.length} | ${userInfo.firstName} | ip: ${proxyIP} ==========`.green);
                     this.log(`Balance: ${userInfo.totalRewards}`);
                     this.log(`Ref code: ${userInfo.referrerCode}`);
 

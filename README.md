@@ -31,20 +31,31 @@ Create data directory in `./data`
 Create data file in `./data/blum.txt` with format 
 `query_id=xxxx or user=xxxx`
 
-Install extension `./bypasstele` into your web browser and get `query_id`
+Install extension `./bypasstele` into your web browser
+![image](imgs/extension.jpg)
+
+Get `query_id` or `user` from the bot app
 ![image](imgs/get_query_id.jpg)
 
     Optional: create proxy file in `./data/proxy.txt`  with format `http://user:pass@ip:port` or `ip:port:username:password`
 
 
 ## Run
+
+### Blum
+
 ```sh
 npm install
 node blum.js
 
 // or node blum-proxy.js for proxy
 ```
+![image](imgs/blum_run.jpg)
+
 This is the same for Major, CZPEPE, Cats, Nomis, Fintopio, Banana, Matchain, Moonbergai
+
+### Major
+![image](imgs/major_run.jpg)
 
 ## Contact
 

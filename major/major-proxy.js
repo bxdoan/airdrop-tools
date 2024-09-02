@@ -198,7 +198,7 @@ class GLaDOS {
                         const { access_token, user } = authResult;
                         const { id, first_name } = user;
 
-                        console.log(`========== Tài khoản ${i + 1} | ${first_name.green} | ip: ${proxyIP} ==========`);
+                        console.log(`===== Tài khoản ${i + 1}/${data.length} | ${first_name.green} | ip: ${proxyIP} ==========`);
 
                         const userInfo = await this.getUserInfo(id, access_token, proxyIndex);
                         if (userInfo) {
