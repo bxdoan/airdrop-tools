@@ -135,8 +135,8 @@ class GLaDOS {
         return result;
     }
 
-    async getDailyTasks(token, proxyIndex) {
-        const tasks = await this.makeRequest('GET', `${this.tasksUrl}?is_daily=false`, null, token, proxyIndex);
+    async getDailyTasks(token, proxyIndex, daily = false) {
+        const tasks = await this.makeRequest('GET', `${this.tasksUrl}?is_daily=${daily}`, null, token, proxyIndex);
         if (tasks) {
             this.log(`Danh sách nhiệm vụ:`.magenta);
             tasks.forEach(task => this.log(`- ${task.id}: ${task.title}`));
@@ -151,7 +151,7 @@ class GLaDOS {
         if (result && result.is_completed) {
             this.log(`Làm nhiệm vụ ${task.id}: ${task.title.yellow} .. trạng thái: thành công`.green);
         } else if (result) {
-//            this.log(`Làm nhiệm vụ ${task.id}: ${task.title.yellow} .. trạng thái: không thành công`.red);
+           this.log(`Làm nhiệm vụ ${task.id}: ${task.title.yellow} .. trạng thái: không thành công`.red);
         } else {
             this.log(`Không thể hoàn thành nhiệm vụ ${task.id}: ${task.title}`.red);
         }
@@ -225,6 +225,13 @@ class GLaDOS {
                         const tasks = await this.getDailyTasks(access_token, proxyIndex);
                         if (tasks) {
                             for (const task of tasks) {
+                                await this.completeTask(access_token, task, proxyIndex);
+                                await this.sleep(1000);
+                            }
+                        }
+                        const tasksTrue = await this.getDailyTasks(access_token, proxyIndex, true);
+                        if (tasksTrue) {
+                            for (const task of tasksTrue) {
                                 await this.completeTask(access_token, task, proxyIndex);
                                 await this.sleep(1000);
                             }
