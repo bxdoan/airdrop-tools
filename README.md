@@ -2,10 +2,9 @@
 
 Airdrop tools for all telegram bot
 
-Click the link below to join the bot and get the referral link
+Join telegram group and ask for support : [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/vp_airdrop)
 
-Join telegram group : [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/vp_airdrop)
-
+Click the link below to join the bot and get the referral link:
 
 ✅ [Blum](https://t.me/blum/app?startapp=ref_KWlM6oGLsY)
 
