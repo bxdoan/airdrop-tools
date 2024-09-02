@@ -303,6 +303,36 @@ class GameBot {
     return proxy;
   }
 
+  askQuestion(query) {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+    return new Promise(resolve => rl.question(query, ans => {
+        rl.close();
+        resolve(ans);
+    }))
+  }
+
+  async joinTribe(tribeId) {
+    const url = `https://game-domain.blum.codes/api/v1/tribe/${tribeId}/join`;
+    try {
+      const response = await this.makeRequest('POST', url);
+      if (response.status === 200) {
+        this.log('Bạn đã gia nhập tribe thành công', 'success');
+        return true;
+      }
+    } catch (error) {
+      if (error.response && error.response.data && error.response.data.message === 'USER_ALREADY_IN_TRIBE') {
+        this.log('Bạn đã gia nhập tribe rồi', 'warning');
+      } else {
+        this.log(`Không thể gia nhập tribe: ${error.message}`, 'error');
+      }
+      return false;
+    }
+  }
+
+
   async main() {
     const dataFile = path.join(__dirname, './../data/blum.txt');
     const queryIds = fs.readFileSync(dataFile, 'utf8')
@@ -317,6 +347,7 @@ class GameBot {
 
     const nhiemvu = await this.askQuestion('Bạn có muốn làm nhiệm vụ không? (y/n): ');
     const hoinhiemvu = nhiemvu.toLowerCase() === 'y';
+
     while (true) {
       for (let i = 0; i < queryIds.length; i++) {
         this.queryId = queryIds[i];
@@ -350,6 +381,10 @@ class GameBot {
             this.log('Đang lấy thông tin....', 'info');
             this.log(`Số dư: ${balanceInfo.availableBalance}`, 'success');
             this.log(`Vé chơi game: ${balanceInfo.playPasses}`, 'success');
+
+            const tribeId = 'b372af40-6e97-4782-b70d-4fc7ea435022';
+            await this.joinTribe(tribeId);
+
             if (!balanceInfo.farming) {
                 const farmingResult = await this.startFarming();
                 if (farmingResult) {
