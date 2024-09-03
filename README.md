@@ -26,6 +26,16 @@ Click the link below to join the bot and get the referral link:
 
 ✅ [MoonbergAI](https://t.me/moonbergai_bot/join?startapp=nlMsKP0ZWe)
 
+✅ [WhiteBunny](https://t.me/whitebunnywtf_bot?start=ref66d6ffa67fae5fc4caea3dbf)
+
+✅ [Xkucoin](https://t.me/xkucoinbot/kucoinminiapp?startapp=cm91dGU9JTJGdGFwLWdhbWUlM0ZpbnZpdGVyVXNlcklkJTNEMzk5MTk5NjQ1JTI2cmNvZGUlM0Q=)
+
+✅ [RockyRabbit](https://t.me/rocky_rabbit_bot/play?startapp=frId399199645)
+
+✅ [Yescoin](https://t.me/theYescoin_bot/Yescoin?startapp=mxRCHl)
+
+✅ [Agent301](https://t.me/Agent301Bot/app?startapp=onetime399199645)
+
 
 ## Set up
 Required: Node.js and Python
