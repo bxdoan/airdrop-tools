@@ -67,7 +67,7 @@ class GameBot {
     return headers;
   }
 
-  async makeRequest(method, url, data = null, customHeaders = {}) {
+  async makeRequest(method, url, data = {}, customHeaders = {}) {
     const config = {
       method,
       url,
@@ -75,7 +75,7 @@ class GameBot {
       httpsAgent: this.proxyAgent,
     };
 
-    if (data !== null) {
+    if (method === 'POST') {
       config.data = data;
     }
 
@@ -323,22 +323,14 @@ class GameBot {
   async leaveTribe(tribeInfo) {
     for (let attempt = 1; attempt <= 5; attempt++) {
       try {
-        try {
-          await this.makeRequest('OPTIONS', 'https://tribe-domain.blum.codes/api/v1/tribe/leave');
-        } catch (error) {
-
-        }
         await this.makeRequest(
             'POST',
             'https://tribe-domain.blum.codes/api/v1/tribe/leave',
-            data = {},
+            {}
         );
-        this.log('Rời tribe thành cô' +
-            'ng', 'success');
         return;
       } catch (error) {
-        this.log(`Không thể rời tribe ${tribeInfo.title} lần ${attempt}: ${error.message} `, 'error');
-        await this.Countdown(20);
+        await this.Countdown(2);
       }
     }
   }
@@ -346,7 +338,10 @@ class GameBot {
   async checkTribe() {
     for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-            const response = await this.makeRequest('GET', 'https://tribe-domain.blum.codes/api/v1/tribe/my');
+            const response = await this.makeRequest(
+                'GET',
+                'https://tribe-domain.blum.codes/api/v1/tribe/my'
+            );
             return response.data;
         } catch (error) {
             this.log(`Không thể kiểm tra tribe: ${error.message}`, 'error');
@@ -359,7 +354,7 @@ class GameBot {
   async joinTribe(tribeId) {
     const tribeInfo = await this.checkTribe();
     if (tribeInfo && tribeInfo.id === tribeId) {
-      this.log('Bạn đã ở trong tribe này', 'success');
+      this.log('Bạn đã ở trong tribe', 'success');
       return false;
     } else {
       await this.leaveTribe(tribeInfo);
@@ -399,9 +394,7 @@ class GameBot {
 
     while (true) {
       for (let i = 0; i < queryIds.length; i++) {
-        const i = 25;
-        this.queryId = "query_id=AAGCmN8gAwAAAIKY3yCYKtlR&user=%7B%22id%22%3A6993975426%2C%22first_name%22%3A%22Jessica%20Nguy%E1%BB%85n%22%2C%22last_name%22%3A%22%22%2C%22username%22%3A%22jesssica6737%22%2C%22language_code%22%3A%22en%22%2C%22allows_write_to_pm%22%3Atrue%7D&auth_date=1725337677&hash=162306ae3548ad9d63187b0737a646deeafc319d0505cebc5808c49f144f2642";
-        // this.queryId = queryIds[i];
+        this.queryId = queryIds[i];
         this.proxy = this.formatProxy(this.getProxy());
         this.proxyAgent = new HttpsProxyAgent(this.proxy);
 
