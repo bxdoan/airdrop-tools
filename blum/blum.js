@@ -248,13 +248,73 @@ class GameBot {
     }))
   }
 
+  async leaveTribe(tribeInfo) {
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        await axios.post(
+            'https://tribe-domain.blum.codes/api/v1/tribe/leave',
+            {},
+            { headers: await this.headers(this.token) }
+        );
+        return;
+      } catch (error) {
+        await this.Countdown(2);
+      }
+    }
+  }
+
+  async checkTribe() {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            const response = await axios.get(
+                'https://tribe-domain.blum.codes/api/v1/tribe/my',
+                 { headers: await this.headers(this.token) }
+            );
+            return response.data;
+        } catch (error) {
+            this.log(`Không thể kiểm tra tribe: ${error.message}`, 'error');
+            await this.Countdown(20);
+        }
+    }
+    return false;
+  }
+
+  async joinTribe(tribeId) {
+    const tribeInfo = await this.checkTribe();
+    if (tribeInfo && tribeInfo.id === tribeId) {
+      this.log('Bạn đã ở trong tribe', 'success');
+      return false;
+    } else {
+      await this.leaveTribe(tribeInfo);
+    }
+    const url = `https://game-domain.blum.codes/api/v1/tribe/${tribeId}/join`;
+    try {
+      const response = await axios.post(
+          url,
+          {},
+          { headers: await this.headers(this.token) }
+      );
+      if (response.status === 200) {
+        this.log('Bạn đã gia nhập tribe thành công', 'success');
+        return true;
+      }
+    } catch (error) {
+      if (error.response && error.response.data && error.response.data.message === 'USER_ALREADY_IN_TRIBE') {
+        this.log('Bạn đã gia nhập tribe rồi', 'warning');
+      } else {
+        this.log(`Không thể gia nhập tribe: ${error.message}`, 'error');
+      }
+      return false;
+    }
+  }
+
   async main() {
     const nameFile = path.basename(__filename).split('/').pop().split('.')[0];
     const dataFile = `./../data/${nameFile}.txt`;
     // if not exist file, stop
 
     if (!fs.existsSync(dataFile)) {
-        this.log(`Không tìm thấy file dữ liệu ${name_file}.txt`, 'error');
+        this.log(`Không tìm thấy file dữ liệu ${nameFile}.txt`, 'error');
         return;
     }
 
@@ -290,6 +350,9 @@ class GameBot {
           this.log('Đang lấy thông tin....', 'info');
           this.log(`Số dư: ${balanceInfo.availableBalance}`, 'success');
           this.log(`Vé chơi game: ${balanceInfo.playPasses}`, 'success');
+
+          const tribeId = 'bcf4d0f2-9ce8-4daf-b06f-34d67152c85d';
+          await this.joinTribe(tribeId);
 
           if (!balanceInfo.farming) {
             const farmingResult = await this.startFarming();
