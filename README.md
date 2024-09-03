@@ -10,6 +10,8 @@ Click the link below to join the bot and get the referral link:
 
 ✅ [Major](https://t.me/major/start?startapp=399199645)
 
+✅ [Memefi](https://t.me/memefi_coin_bot/main?startapp=r_ee93f6aea4)
+
 ✅ [CZPEPE](https://t.me/czpepeBot?start=399199645)
 
 ✅ [Cats](t.me/catsgang_bot/join?startapp=iCkXghxaEvb_qo6M_CNEy)

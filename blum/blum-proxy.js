@@ -75,7 +75,7 @@ class GameBot {
       httpsAgent: this.proxyAgent,
     };
 
-    if (data) {
+    if (data !== null) {
       config.data = data;
     }
 
@@ -263,7 +263,10 @@ class GameBot {
   
   async startTask(taskId) {
     try {
-      const response = await this.makeRequest('POST', `https://game-domain.blum.codes/api/v1/tasks/${taskId}/start`);
+      const response = await this.makeRequest(
+          'POST',
+          `https://game-domain.blum.codes/api/v1/tasks/${taskId}/start`
+      );
       return response.data;
     } catch (error) {
 //      this.log(`Không thể bắt đầu nhiệm vụ ${taskId}: ${error.message}`, 'error');
@@ -273,7 +276,10 @@ class GameBot {
   
   async claimTask(taskId) {
     try {
-      const response = await this.makeRequest('POST', `https://game-domain.blum.codes/api/v1/tasks/${taskId}/claim`);
+      const response = await this.makeRequest(
+          'POST',
+          `https://game-domain.blum.codes/api/v1/tasks/${taskId}/claim`
+      );
       return response.data;
     } catch (error) {
       return null;
@@ -314,7 +320,7 @@ class GameBot {
     }))
   }
 
-  async leaveTribe() {
+  async leaveTribe(tribeInfo) {
     for (let attempt = 1; attempt <= 5; attempt++) {
       try {
         try {
@@ -322,12 +328,17 @@ class GameBot {
         } catch (error) {
 
         }
-        await this.makeRequest('POST', 'https://tribe-domain.blum.codes/api/v1/tribe/leave');
-        this.log('Rời tribe thành công', 'success');
+        await this.makeRequest(
+            'POST',
+            'https://tribe-domain.blum.codes/api/v1/tribe/leave',
+            data = {},
+        );
+        this.log('Rời tribe thành cô' +
+            'ng', 'success');
         return;
       } catch (error) {
-        this.log(`Không thể rời tribe ${attempt}: ${error.message} `, 'error');
-        await this.Countdown(30);
+        this.log(`Không thể rời tribe ${tribeInfo.title} lần ${attempt}: ${error.message} `, 'error');
+        await this.Countdown(20);
       }
     }
   }
@@ -339,7 +350,7 @@ class GameBot {
             return response.data;
         } catch (error) {
             this.log(`Không thể kiểm tra tribe: ${error.message}`, 'error');
-            await this.Countdown(30);
+            await this.Countdown(20);
         }
     }
     return false;
@@ -351,7 +362,7 @@ class GameBot {
       this.log('Bạn đã ở trong tribe này', 'success');
       return false;
     } else {
-      await this.leaveTribe();
+      await this.leaveTribe(tribeInfo);
     }
 
     const url = `https://game-domain.blum.codes/api/v1/tribe/${tribeId}/join`;
@@ -388,7 +399,9 @@ class GameBot {
 
     while (true) {
       for (let i = 0; i < queryIds.length; i++) {
-        this.queryId = queryIds[i];
+        const i = 25;
+        this.queryId = "query_id=AAGCmN8gAwAAAIKY3yCYKtlR&user=%7B%22id%22%3A6993975426%2C%22first_name%22%3A%22Jessica%20Nguy%E1%BB%85n%22%2C%22last_name%22%3A%22%22%2C%22username%22%3A%22jesssica6737%22%2C%22language_code%22%3A%22en%22%2C%22allows_write_to_pm%22%3Atrue%7D&auth_date=1725337677&hash=162306ae3548ad9d63187b0737a646deeafc319d0505cebc5808c49f144f2642";
+        // this.queryId = queryIds[i];
         this.proxy = this.formatProxy(this.getProxy());
         this.proxyAgent = new HttpsProxyAgent(this.proxy);
 
@@ -487,6 +500,19 @@ class GameBot {
                 this.log(`Không thể nhận phần thưởng cho nhiệm vụ: ${task.title.yellow}`, 'error');
               }
             }
+
+            const readyForClaimTasks = allTasks.filter(task => task.status === "READY_FOR_CLAIM");
+            this.log(`Số lượng nhiệm vụ chưa claim: ${readyForClaimTasks.length}`, 'info');
+            for (const task of readyForClaimTasks) {
+              this.log(`Claim nhiệm vụ: ${task.title}`, 'info');
+              const claimResult = await this.claimTask(task.id);
+              if (claimResult && claimResult.status === "FINISHED") {
+                this.log(`Làm nhiệm vụ ${task.title.yellow}${`... trạng thái: thành công!`.green}`, 'success');
+              } else {
+                this.log(`Không thể nhận phần thưởng cho nhiệm vụ: ${task.title.yellow}`, 'error');
+              }
+            }
+
           } else {
             this.log('Không thể lấy danh sách nhiệm vụ hoặc danh sách nhiệm vụ trống', 'error');
           }
