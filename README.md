@@ -40,13 +40,15 @@ Click the link below to join the bot and get the referral link:
 ## Set up
 Required: Node.js and Python
 
-1. Create data directory in `./data`
+1. Create data directory in `{ROOT_REPO}/data`
 
-2. Install extension `./bypasstele` into your web browser
+2. Install extension `./bypasstele` into your web browser:
+
+`settings` -> `extensions` -> `Developer mode ON` -> `Load unpacked` -> select `./bypasstele` folder
 
 ![image](imgs/extension.jpg)
 
-3. Create data file in `./data/blum.txt` with format 
+3. Create data file in `{ROOT_REPO}/data/blum.txt` with format 
 `query_id=xxxx or user=xxxx`. Get `query_id` or `user` from the bot app
 
 ![image](imgs/get_query_id.jpg)
