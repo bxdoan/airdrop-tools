@@ -1,5 +1,6 @@
 .idea
 data/
+banana/banana.txt
 */node_modules/
 */package-lock.json
 Pipfile.lock

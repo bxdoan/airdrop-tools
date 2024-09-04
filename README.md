@@ -4,7 +4,7 @@ Airdrop tools for all telegram bot
 
 Join telegram group and ask for support : [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/vp_airdrop)
 
-Click the link below to join the bot and get the referral link:
+Click the link below to join the bot app and get the referral link:
 
 ✅ [Blum](https://t.me/blum/app?startapp=ref_KWlM6oGLsY)
 
@@ -42,9 +42,9 @@ Required: Node.js and Python
 
 1. Create data directory in `{ROOT_REPO}/data`
 
-2. Install extension `./bypasstele` into your web browser:
+2. Install extension `{ROOT_REPO}/bypasstele` into your web browser:
 
-`settings` -> `extensions` -> `Developer mode ON` -> `Load unpacked` -> select `./bypasstele` folder
+`settings` -> `extensions` -> `Developer mode ON` -> `Load unpacked` -> select `{ROOT_REPO}/bypasstele` folder
 
 ![image](imgs/extension.jpg)
 
@@ -53,13 +53,14 @@ Required: Node.js and Python
 
 ![image](imgs/get_query_id.jpg)
 
-4. Optional: create proxy file in `./data/proxy.txt`  with format `http://user:pass@ip:port` or `ip:port:username:password`
+4. Optional: create proxy file in `{ROOT_REPO}/data/proxy.txt`  with format `http://user:pass@ip:port` or `ip:port:username:password`
 
 ## Run
 
 ### Blum
 
 ```sh
+cd blum
 npm install
 node blum.js
 
