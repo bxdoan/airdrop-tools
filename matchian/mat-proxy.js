@@ -23,11 +23,20 @@ const headers = {
     "accept-language": "en,en-US;q=0.9"
 };
 
+// try load ./../.env file and get DATA_DIR environment variable
+try {
+    require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+}
+catch (error) {
+    console.error('Không thể load file .env');
+}
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
+
+
 class Matchain {
     constructor() {
         this.headers = { ...headers };
         this.proxies = [];
-        this.indexProxies = 0;
         this.autogame = true;
     }
 
@@ -467,8 +476,8 @@ class Matchain {
         this.autogame = true;
 
         while (true) {
-            const dataFile = path.join(__dirname, './../data/matchain.txt');
-            const proxyFile = path.join(__dirname, './../data/proxy.txt');
+            const dataFile = path.join(`${DATA_DIR}/matchain.txt`);
+            const proxyFile = path.join(`${DATA_DIR}/proxy.txt`);
             const data = fs.readFileSync(dataFile, 'utf8')
                 .replace(/\r/g, '')
                 .split('\n')
@@ -497,7 +506,7 @@ class Matchain {
                 } catch (error) {
                     this.log(`Lỗi kiểm tra IP proxy: ${error.message}`, 'warning');
                 }
-                console.log(`========== Tài khoản ${no + 1} | ${user['first_name'].green} | ip: ${proxyIP} ==========`);
+                console.log(`========== Tài khoản ${no + 1}/${data.length} | ${user['first_name'].green} | ip: ${proxyIP} ==========`);
                 try {
                     const result = await this.login(item, proxy);
                     if (result) {

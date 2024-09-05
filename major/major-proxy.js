@@ -72,24 +72,25 @@ class GLaDOS {
         const headers = this.headers(token);
         const proxy = this.formatProxy(this.proxies[proxyIndex]);
         const httpsAgent = new HttpsProxyAgent(proxy);
+        const config = {
+            method,
+            url,
+            headers,
+            httpsAgent: httpsAgent,
+        };
+
+        if (data) {
+            config.data = data;
+        }
 
         try {
-            const config = {
-                method,
-                url,
-                headers,
-                httpsAgent,
-            };
-
-            if (data) {
-                config.data = data;
-            }
-
             const response = await axios(config);
             return response.data;
         } catch (error) {
-//            this.log(`Lỗi rồi: ${error.message}`);
-            return null;
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            throw error;
         }
     }
 
@@ -138,11 +139,11 @@ class GLaDOS {
     }
 
     async swipeCoin(token, proxyIndex) {
-        const getResponse = await this.makeRequest('get', this.swipeCoinUrl, null, token, proxyIndex);
+        const getResponse = await this.makeRequest('GET', this.swipeCoinUrl, null, token, proxyIndex);
         if (getResponse.success) {
             const coins = Math.floor(Math.random() * (1300 - 1000 + 1)) + 1000;
             const payload = { coins };
-            const result = await this.makeRequest('post', this.swipeCoinUrl, payload, token, proxyIndex);
+            const result = await this.makeRequest('POST', this.swipeCoinUrl, payload, token, proxyIndex);
             if (result.success) {
                 this.log(`Swipe coin thành công, nhận ${coins} sao`.green);
             } else {
@@ -212,9 +213,16 @@ class GLaDOS {
             for (let i = 0; i < data.length; i++) {
                 const init_data = data[i].trim();
                 const proxyIndex = i % this.proxies.length;
+                const proxy =this.formatProxy(this.proxies[proxyIndex]);
+
+                let proxyIP = 'Unknown';
+                try {
+                    proxyIP = await this.checkProxyIP(proxy);
+                } catch (error) {
+                    this.log(`Không thể kiểm tra IP của proxy: ${error.message}`.yellow);
+                }
 
                 try {
-                    const proxyIP = await this.checkProxyIP(this.formatProxy(this.proxies[proxyIndex]));
                     const authResult = await this.authenticate(init_data, proxyIndex);
                     
                     if (authResult) {
