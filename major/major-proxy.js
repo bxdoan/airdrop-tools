@@ -3,6 +3,7 @@ const axios = require('axios');
 const path = require('path');
 const colors = require('colors');
 const { HttpsProxyAgent } = require('https-proxy-agent');
+const {DateTime} = require("luxon");
 
 class GLaDOS {
     constructor() {
@@ -13,6 +14,7 @@ class GLaDOS {
         this.rouletteUrl = 'https://major.glados.app/api/roulette';
         this.holdCoinsUrl = 'https://major.glados.app/api/bonuses/coins/';
         this.tasksUrl = 'https://major.glados.app/api/tasks/';
+        this.swipeCoinUrl = 'https://major.glados.app/api/swipe_coin/';
         this.proxies = null;
     }
 
@@ -135,6 +137,27 @@ class GLaDOS {
         return result;
     }
 
+    async swipeCoin(token, proxyIndex) {
+        const getResponse = await this.makeRequest('get', this.swipeCoinUrl, null, token, proxyIndex);
+        if (getResponse.success) {
+            const coins = Math.floor(Math.random() * (1300 - 1000 + 1)) + 1000;
+            const payload = { coins };
+            const result = await this.makeRequest('post', this.swipeCoinUrl, payload, token, proxyIndex);
+            if (result.success) {
+                this.log(`Swipe coin thành công, nhận ${coins} sao`.green);
+            } else {
+                this.log(`Swipe coin không thành công`.red);
+            }
+            return result;
+        } else if (getResponse.detail && getResponse.detail.blocked_until) {
+            const blockedTime = DateTime.fromSeconds(getResponse.detail.blocked_until).setZone('system').toLocaleString(DateTime.DATETIME_MED);
+            this.log(`Swipe coin không thành công, cần mời thêm ${getResponse.detail.need_invites} bạn hoặc chờ đến ${blockedTime}`.yellow);
+        } else {
+            this.log(`Không thể lấy thông tin swipe coin`.red);
+        }
+        return getResponse;
+    }
+
     async getDailyTasks(token, proxyIndex, daily = false) {
         const tasks = await this.makeRequest('GET', `${this.tasksUrl}?is_daily=${daily}`, null, token, proxyIndex);
         if (tasks) {
@@ -219,8 +242,20 @@ class GLaDOS {
                             }
                         }
 
-                        await this.spinRoulette(access_token, proxyIndex);
+                        const rouletteResult = await this.spinRoulette(access_token, proxyIndex);
+                        if (rouletteResult) {
+                            if (rouletteResult.rating_award > 0) {
+                                this.log(`Spin thành công, nhận được ${rouletteResult.rating_award} sao`.green);
+                            } else if (rouletteResult.detail && rouletteResult.detail.blocked_until) {
+                                const blockedTime = DateTime.fromSeconds(rouletteResult.detail.blocked_until).setZone('system').toLocaleString(DateTime.DATETIME_MED);
+                                this.log(`Spin không thành công, cần mời thêm ${rouletteResult.detail.need_invites} bạn hoặc chờ đến ${blockedTime}`.yellow);
+                            } else {
+                                this.log(`Kết quả spin không xác định`.red);
+                            }
+                        }
+
                         await this.holdCoins(access_token, proxyIndex);
+                        await this.swipeCoin(access_token, proxyIndex);
 
                         const tasks = await this.getDailyTasks(access_token, proxyIndex);
                         if (tasks) {

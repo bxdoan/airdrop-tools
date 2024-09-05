@@ -71,7 +71,23 @@ node blum.js
 This is the same for Major, CZPEPE, Cats, Nomis, Fintopio, Banana, Matchain, Moonbergai
 
 ### Major
+
+```sh
+cd major
+npm install
+node major.js
+
+// or node major-proxy.js for proxy
+```
 ![image](imgs/major_run.jpg)
+
+### Yescoin
+
+```sh
+cd yescoin
+python3 yescoin.py
+```
+![image](imgs/yescoin.jpg)
 
 ## Contact
 

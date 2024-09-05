@@ -364,10 +364,10 @@ def get_token_from_payload(payload):
 import urllib.parse
 
 
-def process_account(token):
+def process_account(token, ind, total):
     nickname = get_my_user_nick(token)
-    print(
-        f"{Fore.BLUE + Style.BRIGHT}\n========[{Fore.WHITE + Style.BRIGHT} Tài khoản | {nickname} {Fore.BLUE + Style.BRIGHT}]========")
+    print(f"{Fore.BLUE + Style.BRIGHT}\n========[{Fore.WHITE + Style.BRIGHT} Tài khoản"
+          f" {ind+1}/{total} | {nickname} {Fore.BLUE + Style.BRIGHT}]========")
     print(f"{random.choice(available_colors) + Style.BRIGHT}\r[ Squad ] : Getting...", end="", flush=True)
     squad_info = fetch_squad_info(token)
     if squad_info and squad_info['data']['isJoinSquad']:
@@ -490,6 +490,8 @@ def process_account(token):
     print(f"{random.choice(available_colors) + Style.BRIGHT}\r[ Free Chest ] : Đang cố gắng thu thập..", end="",
           flush=True)
     collected_amount = attempt_collect_special_box(token, 1, 200)
+    print(f"{Fore.BLUE + Style.BRIGHT}\n========[{Fore.WHITE + Style.BRIGHT} Tài khoản"
+          f" {ind+1}/{total} | {nickname} {Fore.BLUE + Style.BRIGHT}] hoàn thành ========")
     time.sleep(2)
 
 
@@ -498,7 +500,7 @@ def main():
         with open(f'{HOME_DATA}/yescoin.txt', 'r') as file:
             queries = file.readlines()
 
-        for query_string in queries:
+        for ind, query_string in enumerate(queries):
             query_string = query_string.strip()
             if not query_string:
                 continue
@@ -509,7 +511,7 @@ def main():
 
             try:
                 token = get_token_from_payload(payload)
-                process_account(token)
+                process_account(token, ind, len(queries))
             except Exception as e:
                 print(f"Error processing account: {e}")
 
