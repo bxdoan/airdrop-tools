@@ -491,18 +491,12 @@ async function main() {
 
 
   const maxThreads = 10;
-    const proxyFile = path.join(`${DATA_DIR}/proxy.txt`);
+  const proxyFile = path.join(`${DATA_DIR}/proxy.txt`);
   const listProxies = fs.readFileSync(proxyFile, 'utf8')
     .replace(/\r/g, '')
     .split('\n')
     .filter(Boolean);
 
-  // if (queryIds.length !== proxies.length) {
-  //   console.error('Số lượng proxy và data phải bằng nhau.'.red);
-  //   console.log(`Data: ${queryIds.length}`);
-  //   console.log(`Proxy: ${proxies.length}`);
-  //   process.exit(1);
-  // }
     while (true) {
       let currentIndex = 0;
       let minRemainingTime = Infinity;
@@ -516,10 +510,11 @@ async function main() {
       while (currentIndex < queryIds.length) {
         console.log(`Đã sợ thì đừng dùng, đã dùng thì đừng sợ!`.magenta);
         const workerPromises = [];
-        const proxy = formatProxy(getProxy(listProxies));
+
 
         const batchSize = Math.min(maxThreads, queryIds.length - currentIndex);
         for (let i = 0; i < batchSize; i++) {
+          const proxy = formatProxy(getProxy(listProxies));
           const worker = new Worker(__filename, {
             workerData: {
               queryId: queryIds[currentIndex],
