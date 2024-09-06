@@ -1,6 +1,8 @@
 const axios = require('axios');
 const https = require('https');
 const path = require('path');
+const { parse } = require('querystring');
+const colors = require('colors');
 const { execSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
@@ -479,9 +481,9 @@ class Matchain {
             const dataFile = path.join(`${DATA_DIR}/matchain.txt`);
             const proxyFile = path.join(`${DATA_DIR}/proxy.txt`);
             const data = fs.readFileSync(dataFile, 'utf8')
-                .replace(/\r/g, '')
                 .split('\n')
-                .filter(Boolean);
+                .map(line => line.trim())
+                .filter(line => line !== '');
             this.proxies = fs.readFileSync(proxyFile, 'utf8')
                 .replace(/\r/g, '')
                 .split('\n')
@@ -499,6 +501,7 @@ class Matchain {
                     this.log('Không thể phân tích JSON', 'error');
                     continue;
                 }
+
                 const proxy = this.formatProxy(this.proxies[no % this.proxies.length]);
                 let proxyIP = 'Unknown';
                 try {
@@ -506,6 +509,7 @@ class Matchain {
                 } catch (error) {
                     this.log(`Lỗi kiểm tra IP proxy: ${error.message}`, 'warning');
                 }
+
                 console.log(`========== Tài khoản ${no + 1}/${data.length} | ${user['first_name'].green} | ip: ${proxyIP} ==========`);
                 try {
                     const result = await this.login(item, proxy);
