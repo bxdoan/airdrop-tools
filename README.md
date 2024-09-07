@@ -85,7 +85,8 @@ node major.js
 
 ```sh
 cd yescoin
-python3 yescoin.py
+npm install
+node yes.js
 ```
 ![image](imgs/yescoin.jpg)
 

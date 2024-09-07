@@ -10,7 +10,6 @@ try {
     require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 }
 catch (error) {
-    console.error('Không thể load file .env');
 }
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 
