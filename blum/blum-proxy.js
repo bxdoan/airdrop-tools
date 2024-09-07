@@ -246,7 +246,7 @@ class GameBot {
   async Countdown(seconds) {
     for (let i = Math.floor(seconds); i >= 0; i--) {
       readline.cursorTo(process.stdout, 0);
-      process.stdout.write(`${`[Tài khoản ${this.accountIndex + 1}]`.padEnd(15)} [*] Chờ ${i} giây để tiếp tục...`);
+      process.stdout.write(`${`[Tài khoản ${this.accountIndex + 1}]`.padEnd(15)} [*] Chờ ${i} giây để tiếp tục...\n`);
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
     console.log('');
@@ -532,7 +532,6 @@ async function main() {
 
   this.indexProxies = 0;
 
-
   const maxThreads = 10;
   const proxyFile = path.join(`${DATA_DIR}/proxy.txt`);
   const listProxies = fs.readFileSync(proxyFile, 'utf8')
@@ -554,7 +553,6 @@ async function main() {
         console.log(`Đã sợ thì đừng dùng, đã dùng thì đừng sợ!`.magenta);
         const workerPromises = [];
 
-
         const batchSize = Math.min(maxThreads, queryIds.length - currentIndex);
         for (let i = 0; i < batchSize; i++) {
           const proxy = formatProxy(getProxy(listProxies));
@@ -567,18 +565,27 @@ async function main() {
           });
 
         workerPromises.push(
-          new Promise((resolve, reject) => {
+          new Promise((resolve) => {
             worker.on('message', (message) => {
-              const { remainingTime } = message;
-              if (remainingTime < minRemainingTime) {
-                minRemainingTime = remainingTime;
+              if (message.error) {
+                errors.push(`Tài khoản ${message.accountIndex}: ${message.error}`);
+              } else {
+                const { remainingTime } = message;
+                if (remainingTime < minRemainingTime) {
+                  minRemainingTime = remainingTime;
+                }
               }
               resolve();
             });
-            worker.on('error', reject);
+            worker.on('error', (error) => {
+              errors.push(`Lỗi worker cho tài khoản ${currentIndex}: ${error.message}`);
+              resolve();
+            });
             worker.on('exit', (code) => {
-              if (code !== 0) reject(new Error(`Luồng bị dừng: ${code}`));
-              else resolve();
+              if (code !== 0) {
+                errors.push(`Worker cho tài khoản ${currentIndex} thoát với mã: ${code}`);
+              }
+              resolve();
             });
           })
         );
