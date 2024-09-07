@@ -12,7 +12,7 @@ try {
     require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 }
 catch (error) {
-    console.error('Không thể load file .env');
+    // console.error('Không thể load file .env');
 }
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 
@@ -282,8 +282,51 @@ class GameBot {
       return null;
     }
   }
+  async leaveTribe() {
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        await this.makeRequest(
+            'POST',
+            'https://tribe-domain.blum.codes/api/v1/tribe/leave',
+            {},
+            true
+        );
+        this.log('Rời tribe thành công', 'success');
+        return;
+      } catch (error) {
+        this.log(`Không thể rời tribe ${attempt}: ${error.message} `, 'error');
+        await this.Countdown(30);
+      }
+    }
+  }
+
+  async checkTribe() {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            const response = await this.makeRequest(
+                'GET',
+                'https://tribe-domain.blum.codes/api/v1/tribe/my',
+                null,
+                true
+            );
+            return response.data;
+        } catch (error) {
+            this.log(`Không thể kiểm tra tribe: ${error.message}`, 'error');
+            await this.Countdown(30);
+        }
+    }
+    return false;
+  }
 
   async joinTribe(tribeId) {
+    const tribeInfo = await this.checkTribe();
+    if (tribeInfo && tribeInfo.id === tribeId) {
+      this.log('Bạn đã ở trong tribe này', 'success');
+      return false;
+    } else {
+      await this.leaveTribe();
+    }
+
     const url = `https:///tribe-domain.blum.codes/api/v1/tribe/${tribeId}/join`;
     try {
       await this.randomDelay();
@@ -324,7 +367,7 @@ class GameBot {
     if (balanceInfo) {
       await this.log(`Số dư: ${balanceInfo.availableBalance} | Game : ${balanceInfo.playPasses}`, 'success');
 
-      const tribeId = 'b372af40-6e97-4782-b70d-4fc7ea435022';
+      const tribeId = 'bcf4d0f2-9ce8-4daf-b06f-34d67152c85d';
       await this.joinTribe(tribeId);
 
       if (!balanceInfo.farming) {
@@ -425,7 +468,7 @@ class GameBot {
             if (playResult) {
               await this.log(`Bắt đầu chơi game lần thứ ${j + 1}...`, 'success');
               await new Promise(resolve => setTimeout(resolve, 30000));
-              const randomNumber = Math.floor(Math.random() * (200 - 150 + 1)) + 150;
+              const randomNumber = Math.floor(Math.random() * (300 - 250 + 1)) + 250;
               const claimGameResult = await this.claimGame(randomNumber);
               if (claimGameResult) {
                 await this.log(`Đã nhận phần thưởng game lần thứ ${j + 1} thành công với ${randomNumber} điểm!`, 'success');

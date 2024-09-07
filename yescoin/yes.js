@@ -315,6 +315,19 @@ class YesCoinBot {
         }
     }
 
+    async leaveSquad(token, proxy) {
+        const url = 'https://api-backend.yescoin.gold/squad/leaveSquad';
+        try {
+            const response = await this.makeRequest('post', url, null, token, proxy);
+            if (response.code === 0) {
+                return response;
+            }
+            return null;
+        } catch (error) {
+            return null;
+        }
+    }
+
     async joinSquad(token, squadLink, proxy) {
         const url = 'https://api.yescoin.gold/squad/joinSquad';
         const data = { squadTgLink: squadLink };
@@ -496,10 +509,20 @@ class YesCoinBot {
             const squadTitle = squadInfo.data.squadInfo.squadTitle;
             const squadMembers = squadInfo.data.squadInfo.squadMembers;
             await this.log(`Squad: ${squadTitle} | ${squadMembers} Thành viên`, 'info');
+            const leaveSquad = await this.leaveSquad(this.token, this.proxy);
+            if (leaveSquad) {
+                const joinResult = await this.joinSquad(this.token, "t.me/vp_airdrop", this.proxy);
+                if (joinResult) {
+                    await this.log(`Squad: ${nickname} gia nhập Squad thành công !`, 'success');
+                } else {
+                    await this.log(`Squad: ${nickname} gia nhập Squad thất bại !`, 'error');
+                }
+            } else {
+                await this.log(`Squad: ${nickname} gia nhập Squad thất bại !`, 'error');
+            }
         } else {
-            await this.log('Squad: Bạn không ở trong Squad, gia nhập Dân Cày Airdrop.', 'warning');
             await this.randomDelay();
-            const joinResult = await this.joinSquad(this.token, "t.me/dancayairdrop", this.proxy);
+            const joinResult = await this.joinSquad(this.token, "t.me/vp_airdrop", this.proxy);
             if (joinResult) {
                 await this.log(`Squad: ${nickname} gia nhập Squad thành công !`, 'success');
             } else {
