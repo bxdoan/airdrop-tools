@@ -339,7 +339,8 @@ class Matchain {
         }
 
         const extraTasks = Array.isArray(data['Extra Tasks']) ? data['Extra Tasks'] : [];
-        const allTasks = [...data.Tasks, ...extraTasks];
+        const ecoTasks = Array.isArray(data['Matchain Ecosystem']) ? data['Matchain Ecosystem'] : [];
+        const allTasks = [...data.Tasks, ...extraTasks, ...ecoTasks];
         const filteredTasks = allTasks.filter(task => task.complete === false && task.name !== "join_match_group");
         const taskNames = filteredTasks.map(task => task.name);
         return taskNames;
