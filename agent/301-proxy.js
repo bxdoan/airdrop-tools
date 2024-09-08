@@ -304,7 +304,7 @@ class AgentAPI {
                         continue;
                     }
 
-                    console.log(`========== Tài khoản ${no + 1} | ${firstName} | ip: ${proxyIP} ==========`.green);
+                    console.log(`========== Tài khoản ${no + 1}/${data.length} | ${firstName} | ip: ${proxyIP} ==========`.green);
                     const userInfo = await this.getMe(authorization, proxy);
                     this.log(`Balance: ${userInfo.result.balance.toString().white}`, 'success');
                     this.log(`Tickets: ${userInfo.result.tickets.toString().white}`, 'success');
@@ -321,7 +321,7 @@ class AgentAPI {
                 }
             }
 
-            await this.waitWithCountdown(60 * 60);
+            await this.waitWithCountdown(30 * 60);
         }
     }
 }
