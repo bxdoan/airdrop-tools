@@ -57,7 +57,7 @@ Required: Node.js and Python
 
 ![image](imgs/get_query_id.jpg)
 
-4. Optional: create proxy file in `{ROOT_REPO}/data/proxy.txt`  with format `http://user:pass@ip:port` or `ip:port:username:password`
+4. Optional: create proxy file in `{ROOT_REPO}/data/proxy.txt`  with format `http://username:password@ip:port` or `ip:port:username:password`
 
 ## Run
 
@@ -93,6 +93,24 @@ npm install
 node yes.js
 ```
 ![image](imgs/yescoin.jpg)
+
+### Matchain
+
+```sh
+cd matchain
+npm install
+node mat-proxy.js
+```
+![image](imgs/matchain.jpg)
+
+### Fintopio
+
+```sh
+cd fin
+npm install
+node fin-proxy.js
+```
+![image](imgs/fin.jpg)
 
 ## Contact
 
