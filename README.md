@@ -36,6 +36,10 @@ Click the link below to join the bot app and get the referral link:
 
 ✅ [Agent301](https://t.me/Agent301Bot/app?startapp=onetime399199645)
 
+✅ [BOINK](https://t.me/boinker_bot/boinkapp?startapp=boink399199645)
+
+✅ [To The Moon](https://t.me/PoPPtothemoon_bot/moon?startapp=399199645)
+
 
 ## Set up
 Required: Node.js and Python

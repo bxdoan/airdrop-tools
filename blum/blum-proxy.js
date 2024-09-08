@@ -283,7 +283,7 @@ class GameBot {
     }
   }
   async leaveTribe() {
-    for (let attempt = 1; attempt <= 5; attempt++) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         await this.makeRequest(
             'POST',
@@ -295,7 +295,7 @@ class GameBot {
         return;
       } catch (error) {
         this.log(`Không thể rời tribe ${attempt}: ${error.message} `, 'error');
-        await this.Countdown(30);
+        await this.Countdown(5);
       }
     }
   }
