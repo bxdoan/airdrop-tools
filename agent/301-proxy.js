@@ -292,7 +292,8 @@ class AgentAPI {
         while (true) {
             for (let no = 0; no < data.length; no++) {
                 const authorization = data[no];
-                const proxy = this.formatProxy(this.proxies[no] || this.proxies[0]);
+                const proxyIndex = no % this.proxies.length;
+                const proxy = this.formatProxy(this.proxies[proxyIndex]);
                 const firstName = this.extractFirstName(authorization);
 
                 try {
