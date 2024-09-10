@@ -652,7 +652,7 @@ async function main() {
       }
     }
 
-    const gameBot = new GameBot(null, 0, proxies[0]);
+    const gameBot = new GameBot(null, 0, listProxies[0]);
     await gameBot.Countdown(28900);
   }
 }
