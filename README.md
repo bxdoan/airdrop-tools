@@ -119,7 +119,7 @@ cd agent
 npm install
 node 301-proxy.js
 ```
-![image](imgs/Agent.jpg)
+![image](imgs/agent.jpg)
 
 ### IamDog
 
