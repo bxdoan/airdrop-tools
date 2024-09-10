@@ -322,6 +322,8 @@ class GameBot {
     if (tribeInfo && tribeInfo.id === tribeId) {
       this.log('Bạn đã ở trong tribe này', 'success');
       return false;
+    } else if (!tribeInfo) {
+      this.log('Không thể kiểm tra tribe, bỏ qua gia nhập tribe', 'warning');
     } else {
       await this.leaveTribe();
     }
@@ -491,8 +493,8 @@ class GameBot {
               if (playResult) {
                 await this.log(`Bắt đầu chơi game lần thứ ${j + 1}...`, 'success');
                 await new Promise(resolve => setTimeout(resolve, 30000));
-                const randomNumber = Math.floor(Math.random() * (200 - 150 + 1)) + 150;
-                const claimGameResult = await this.claimGame(2000);
+                const randomNumber = Math.floor(Math.random() * (250 - 200 + 1)) + 200;
+                const claimGameResult = await this.claimGame(randomNumber);
                 if (claimGameResult) {
                   await this.log(`Đã nhận phần thưởng game lần thứ ${j + 1} thành công với ${randomNumber} điểm!`, 'success');
                 }
