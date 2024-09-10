@@ -1,7 +1,7 @@
 const fs = require('fs');
 const axios = require('axios');
-const { DateTime } = require('luxon');
 const path = require('path');
+const { DateTime } = require('luxon');
 const colors = require('colors');
 const readline = require('readline');
 const { HttpsProxyAgent } = require('https-proxy-agent');
@@ -9,8 +9,8 @@ const { HttpsProxyAgent } = require('https-proxy-agent');
 class CatsAPI {
     constructor() {
         this.baseURL = 'https://cats-backend-cxblew-prod.up.railway.app';
-        this.listProxies = [];
         this.indexProxies = 0;
+        this.proxies = fs.readFileSync('./../data/proxy.txt', 'utf8').replace(/\r/g, '').split('\n').filter(Boolean);
     }
 
     headers(authorization) {
@@ -37,12 +37,6 @@ class CatsAPI {
             headers,
             httpsAgent,
         });
-    }
-
-    async createUser(authorization, referralCode, proxy) {
-        const url = `${this.baseURL}/user/create?referral_code=${referralCode}`;
-        const headers = this.headers(authorization);
-        return this.makeRequest('post', url, {}, headers, proxy);
     }
 
     async getUserInfo(authorization, proxy) {
@@ -108,9 +102,9 @@ class CatsAPI {
     }
 
     getProxy() {
-        const proxy = this.listProxies[this.indexProxies];
+        const proxy = this.proxies[this.indexProxies];
         this.indexProxies++;
-        if (this.indexProxies >= this.listProxies.length) {
+        if (this.indexProxies >= this.proxies.length) {
           this.indexProxies = 0;
         }
         return proxy;
@@ -132,12 +126,22 @@ class CatsAPI {
             
             for (const task of incompleteTasks) {
                 try {
-                    const completeResponse = await this.completeTask(authorization, task.id, proxy);
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Task completion timed out')), 15000)
+                    );
+                    const completePromise = this.completeTask(authorization, task.id, proxy);
+                    
+                    const completeResponse = await Promise.race([completePromise, timeoutPromise]);
+                    
                     if (completeResponse.data.success) {
                         this.log(`Làm nhiệm vụ "${task.title}" thành công`, 'success');
                     }
                 } catch (error) {
-//                    this.log(`Lỗi khi làm nhiệm vụ "${task.title}": ${error.message}`, 'error');
+                    if (error.message === 'Task completion timed out') {
+                        this.log(`Nhiệm vụ "${task.title}" bị timeout sau 15 giây`, 'warning');
+                    } else {
+                        // this.log(`Lỗi khi làm nhiệm vụ "${task.title}": ${error.message}`, 'error');
+                    }
                 }
             }
             this.log(`Đã làm hết các nhiệm vụ, có một số nhiệm vụ sẽ không làm được!`, 'success');
@@ -147,17 +151,9 @@ class CatsAPI {
     }
 
     async main() {
-        const referralCode = 'iCkXghxaEvb_qo6M_CNEy'; // refcode
-
         while (true) {
             const dataFile = path.join(__dirname, './../data/cats.txt');
             const data = fs.readFileSync(dataFile, 'utf8')
-                .replace(/\r/g, '')
-                .split('\n')
-                .filter(Boolean);
-
-            const proxyFile = path.join(__dirname, './../data/proxy.txt');
-            this.listProxies = fs.readFileSync(proxyFile, 'utf8')
                 .replace(/\r/g, '')
                 .split('\n')
                 .filter(Boolean);
@@ -173,22 +169,11 @@ class CatsAPI {
                     continue;
                 }
 
-                // try {
-                //     const response = await this.createUser(authorization, referralCode, proxy);
-                //     this.log('Tạo user thành công!', 'success');
-                // } catch (error) {
-                //     if (error.response && error.response.data && error.response.data.message.includes('already exist')) {
-                //         this.log('Tài khoản đã được đăng ký', 'warning');
-                //     } else {
-                //         this.log(`Lỗi khi tạo user: ${error.message}`, 'error');
-                //         continue;
-                //     }
-                // }
-
                 try {
                     const userInfoResponse = await this.getUserInfo(authorization, proxy);
                     const userInfo = userInfoResponse.data;
-                    console.log(`========== Tài khoản ${no + 1}}/${data.length} | ${userInfo.firstName} | ip: ${proxyIP} ==========`.green);
+                    this.log('Tools is shared at telegram VP Airdrop (@vp_airdrop)');
+                    this.log(`========== Tài khoản ${no + 1}/${data.length} | ${userInfo.firstName} | ip: ${proxyIP} ==========`.green);
                     this.log(`Balance: ${userInfo.totalRewards}`);
                     this.log(`Ref code: ${userInfo.referrerCode}`);
 

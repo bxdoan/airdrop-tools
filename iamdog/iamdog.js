@@ -313,13 +313,13 @@ class IamDogAPIClient {
     }
 
     async main() {
-        const dataFile = path.join(__dirname, 'data.txt');
+        const dataFile = path.join(__dirname, './../data/iamdog.txt');
         const data = fs.readFileSync(dataFile, 'utf8')
             .replace(/\r/g, '')
             .split('\n')
             .filter(Boolean);
 
-        this.log('Tool được chia sẻ tại kênh telegram Dân Cày Airdrop (@dancayairdrop)');
+        this.log('Tools is shared at telegram VP Airdrop (@vp_airdrop)');
         const nangcap = await this.askQuestion('Bạn có muốn nâng cấp nhân vật không? (y/n): ');
         const hoinangcap = nangcap.toLowerCase() === 'y';
 

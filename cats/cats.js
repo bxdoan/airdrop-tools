@@ -24,12 +24,6 @@ class CatsAPI {
         };
     }
 
-    async createUser(authorization, referralCode) {
-        const url = `${this.baseURL}/user/create?referral_code=${referralCode}`;
-        const headers = this.headers(authorization);
-        return axios.post(url, {}, { headers });
-    }
-
     async getUserInfo(authorization) {
         const url = `${this.baseURL}/user`;
         const headers = this.headers(authorization);
@@ -84,12 +78,22 @@ class CatsAPI {
             
             for (const task of incompleteTasks) {
                 try {
-                    const completeResponse = await this.completeTask(authorization, task.id);
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Task completion timed out')), 15000)
+                    );
+                    const completePromise = this.completeTask(authorization, task.id);
+                    
+                    const completeResponse = await Promise.race([completePromise, timeoutPromise]);
+                    
                     if (completeResponse.data.success) {
                         this.log(`Làm nhiệm vụ "${task.title}" thành công`, 'success');
                     }
                 } catch (error) {
-//                    this.log(`Lỗi khi làm nhiệm vụ "${task.title}": ${error.message}`, 'error');
+                    if (error.message === 'Task completion timed out') {
+                        this.log(`Nhiệm vụ "${task.title}" bị timeout sau 15 giây`, 'warning');
+                    } else {
+//                        this.log(`Lỗi khi làm nhiệm vụ "${task.title}": ${error.message}`, 'error');
+                    }
                 }
             }
             this.log(`Đã làm hết các nhiệm vụ, có một số nhiệm vụ sẽ không làm được!`, 'success');
@@ -99,32 +103,20 @@ class CatsAPI {
     }
 
     async main() {
-        const dataFile = 'data.txt';
+        const dataFile = './../data/cats.txt';
         const data = fs.readFileSync(dataFile, 'utf8')
             .replace(/\r/g, '')
             .split('\n')
             .filter(Boolean);
 
-        const referralCode = 'A4p7RTx_7ye71HYVgiStx'; // refcode
-
         while (true) {
             for (let no = 0; no < data.length; no++) {
                 const authorization = data[no];
 
-                try {
-                    const response = await this.createUser(authorization, referralCode);
-                    this.log('Tạo user thành công!', 'success');
-                } catch (error) {
-                    if (error.response && error.response.data && error.response.data.message.includes('already exist')) {
-                        this.log('Tài khoản đã được đăng ký', 'warning');
-                    } else {
-                        throw error;
-                    }
-                }
-
                 const userInfoResponse = await this.getUserInfo(authorization);
                 const userInfo = userInfoResponse.data;
-                console.log(`========== Tài khoản ${no + 1} | ${userInfo.firstName} ==========`.green);
+                this.log('Tools is shared at telegram VP Airdrop (@vp_airdrop)');
+                this.log(`========== Tài khoản ${no + 1}/${data.length} | ${userInfo.firstName} ==========`.green);
                 this.log(`Balance: ${userInfo.totalRewards}`);
                 this.log(`Ref code: ${userInfo.referrerCode}`);
 
