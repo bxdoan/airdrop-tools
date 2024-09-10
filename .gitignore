@@ -5,3 +5,5 @@ banana/banana.txt
 */package-lock.json
 Pipfile.lock
 .env
+
+yescoin/token.json
