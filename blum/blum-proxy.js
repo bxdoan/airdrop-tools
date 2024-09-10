@@ -459,6 +459,19 @@ class GameBot {
           } else {
             await this.log(`Không thể nhận phần thưởng cho nhiệm vụ: ${task.title.yellow}`, 'error');
           }
+
+          const readyForClaimTasks = allTasks.filter(task => task.status === "READY_FOR_CLAIM");
+          this.log(`Số lượng nhiệm vụ chưa claim: ${readyForClaimTasks.length}`, 'info');
+          for (const task of readyForClaimTasks) {
+            this.log(`Claim nhiệm vụ: ${task.title}`, 'info');
+            const claimResult = await this.claimTask(task.id);
+            if (claimResult && claimResult.status === "FINISHED") {
+              this.log(`Làm nhiệm vụ ${task.title.yellow}${`... trạng thái: thành công!`.green}`, 'success');
+            } else {
+              this.log(`Không thể nhận phần thưởng cho nhiệm vụ: ${task.title.yellow}`, 'error');
+            }
+          }
+
         }
       } else {
         await this.log('Không thể lấy danh sách nhiệm vụ hoặc danh sách nhiệm vụ trống', 'error');
