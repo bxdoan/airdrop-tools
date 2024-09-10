@@ -585,7 +585,6 @@ async function main() {
     .filter(Boolean);
 
   const maxThreads = 20;
-
   while (true) {
     let currentIndex = 0;
     let minRemainingTime = Infinity;
@@ -598,6 +597,7 @@ async function main() {
         .filter(Boolean);
 
     while (currentIndex < queryIds.length) {
+      console.log('Tools is shared at telegram VP Airdrop (@vp_airdrop)');
       console.log(`Đã sợ thì đừng dùng, đã dùng thì đừng sợ!`.magenta);
       const workerPromises = [];
 

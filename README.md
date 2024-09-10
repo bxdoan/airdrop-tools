@@ -40,6 +40,11 @@ Click the link below to join the bot app and get the referral link:
 
 ✅ [To The Moon](https://t.me/PoPPtothemoon_bot/moon?startapp=399199645)
 
+✅ [Mhaya](https://t.me/mhaya_bot?start=28PseCdbWcs)
+
+✅ [MidasRWA](https://t.me/MidasRWA_bot/app?startapp=ref_061624a8-e745-4c33-ab16-0c27107be390)
+
+✅ [IAMDOG](https://t.me/IAMDOG_bot?start=PN38WJ)
 
 ## Set up
 Required: Node.js and Python
@@ -61,7 +66,7 @@ Required: Node.js and Python
 
 ## Run
 
-### Blum
+### [Blum](https://t.me/blum/app?startapp=ref_KWlM6oGLsY)
 
 ```sh
 cd blum
@@ -74,7 +79,7 @@ node blum.js
 
 This is the same for Major, CZPEPE, Cats, Nomis, Fintopio, Banana, Matchain, Moonbergai
 
-### Major
+### [Major](https://t.me/major/start?startapp=399199645)
 
 ```sh
 cd major
@@ -85,7 +90,7 @@ node major.js
 ```
 ![image](imgs/major_run.jpg)
 
-### Yescoin
+### [Yescoin](https://t.me/theYescoin_bot/Yescoin?startapp=mxRCHl)
 
 ```sh
 cd yescoin
@@ -94,7 +99,7 @@ node yes.js
 ```
 ![image](imgs/yescoin.jpg)
 
-### Matchain
+### [Matchain](https://t.me/MatchQuestBot/start?startapp=95c2d862b8f59dea782f41aaf4c364ab)
 
 ```sh
 cd matchain
@@ -103,7 +108,7 @@ node mat-proxy.js
 ```
 ![image](imgs/matchain.jpg)
 
-### Fintopio
+### [Fintopio](https://t.me/fintopio/wallet?startapp=reflink-reflink_XP3STJDYcKqYmduP-)
 
 ```sh
 cd fin
@@ -112,7 +117,7 @@ node fin-proxy.js
 ```
 ![image](imgs/fin.jpg)
 
-### Agent301
+### [Agent301](https://t.me/Agent301Bot/app?startapp=onetime399199645)
 
 ```sh
 cd agent
@@ -121,7 +126,7 @@ node agent-proxy.js
 ```
 ![image](imgs/agent.jpg)
 
-### IamDog
+### [IAMDOG](https://t.me/IAMDOG_bot?start=PN38WJ)
 
 ```sh
 cd iamdog
@@ -129,6 +134,24 @@ npm install
 node iamdog-proxy.js
 ```
 ![image](imgs/iamdog.jpg)
+
+### [Banana](https://t.me/OfficialBananaBot/banana?startapp=referral=TCJMSB)
+
+```sh
+cd banana
+npm install
+node banana-proxy.js
+```
+![image](imgs/banana.jpg)
+
+### [Cats](t.me/catsgang_bot/join?startapp=iCkXghxaEvb_qo6M_CNEy)
+
+```sh
+cd cats
+npm install
+node cats-proxy.js
+```
+![image](imgs/cats.jpg)
 
 ## Contact
 
