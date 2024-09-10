@@ -117,7 +117,7 @@ node fin-proxy.js
 ```sh
 cd agent
 npm install
-node 301-proxy.js
+node agent-proxy.js
 ```
 ![image](imgs/agent.jpg)
 
