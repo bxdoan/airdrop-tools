@@ -26,29 +26,20 @@ class AgentAPI {
 
     log(msg, type = 'info') {
         const timestamp = new Date().toLocaleTimeString();
-        switch(type) {
-            case 'success':
-                console.log(`[${timestamp}] [*] ${msg}`.green);
-                break;
-            case 'custom':
-                console.log(`[${timestamp}] [*] ${msg}`);
-                break;        
-            case 'error':
-                console.log(`[${timestamp}] [!] ${msg}`.red);
-                break;
-            case 'warning':
-                console.log(`[${timestamp}] [*] ${msg}`.yellow);
-                break;
-            default:
-                console.log(`[${timestamp}] [*] ${msg}`.blue);
-        }
+        const logTypes = {
+            success: msg => console.log(`[${timestamp}] [*] ${msg}`.green),
+            custom: msg => console.log(`[${timestamp}] [*] ${msg}`),
+            error: msg => console.log(`[${timestamp}] [!] ${msg}`.red),
+            warning: msg => console.log(`[${timestamp}] [*] ${msg}`.yellow),
+            info: msg => console.log(`[${timestamp}] [*] ${msg}`.blue)
+        };
+        (logTypes[type] || logTypes.info)(msg);
     }
 
     async waitWithCountdown(seconds) {
         for (let i = seconds; i >= 0; i--) {
             readline.cursorTo(process.stdout, 0);
-            const timestamp = new Date().toLocaleTimeString();
-            process.stdout.write(`[${timestamp}] [*] Chờ ${i} giây để tiếp tục...`);
+            process.stdout.write(`[${new Date().toLocaleTimeString()}] [*] Chờ ${i} giây để tiếp tục...`);
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
         console.log('');
@@ -62,20 +53,37 @@ class AgentAPI {
                 const userObject = JSON.parse(decodeURIComponent(userString));
                 return userObject.first_name;
             }
-            return 'Unknown';
         } catch (error) {
             this.log(`Không đọc được dữ liệu: ${error.message}`, 'error');
-            return 'Unknown';
+        }
+        return 'Unknown';
+    }
+
+    async makeRequest(method, url, payload, authorization, retries = 3) {
+        const config = {
+            method,
+            url,
+            data: payload,
+            headers: this.headers(authorization)
+        };
+
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+                const response = await axios(config);
+                return response.data;
+            } catch (error) {
+                if (attempt === retries) {
+                    throw error;
+                }
+                this.log(`Lỗi request (lần thử ${attempt}/${retries}): ${error.message}. Đang thử lại...`, 'warning');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
         }
     }
 
     async getMe(authorization) {
-        const url = `${this.baseURL}/getMe`;
-        const payload = {"referrer_id": 376905749};
-        
         try {
-            const response = await axios.post(url, payload, { headers: this.headers(authorization) });
-            return response.data;
+            return await this.makeRequest('POST', `${this.baseURL}/getMe`, {"referrer_id": 376905749}, authorization);
         } catch (error) {
             this.log(`Lỗi lấy thông tin người dùng: ${error.message}`, 'error');
             throw error;
@@ -83,12 +91,9 @@ class AgentAPI {
     }
 
     async completeTask(authorization, taskType, taskTitle, currentCount = 0, maxCount = 1) {
-        const url = `${this.baseURL}/completeTask`;
-        const payload = { "type": taskType };
-        
         try {
-            const response = await axios.post(url, payload, { headers: this.headers(authorization) });
-            const result = response.data.result;
+            const response = await this.makeRequest('POST', `${this.baseURL}/completeTask`, { "type": taskType }, authorization);
+            const result = response.result;
             this.log(`Làm nhiệm vụ ${taskTitle.yellow} ${currentCount + 1}/${maxCount} thành công | Phần thưởng ${result.reward.toString().magenta} | Balance ${result.balance.toString().magenta}`, 'custom');
             return result;
         } catch (error) {
@@ -96,34 +101,42 @@ class AgentAPI {
         }
     }
 
-    async processTasks(authorization, tasks) {
-        const unclaimedTasks = tasks.filter(task => !task.is_claimed && !['nomis2', 'boost', 'invite_3_friends'].includes(task.type));
-        
-        if (unclaimedTasks.length === 0) {
-            this.log("Không còn nhiệm vụ chưa hoàn thành.", 'warning');
-            return;
+    async getTasks(authorization) {
+        try {
+            const response = await this.makeRequest('POST', `${this.baseURL}/getTasks`, {}, authorization);
+            return response.result.data;
+        } catch (error) {
+            this.log(`Lỗi lấy danh sách nhiệm vụ: ${error.message}`, 'error');
+            throw error;
         }
-    
-        for (const task of unclaimedTasks) {
-            if (task.max_count) {
-                const remainingCount = task.max_count - (task.count || 0);
+    }
+
+    async processTasks(authorization) {
+        try {
+            const tasks = await this.getTasks(authorization);
+            const unclaimedTasks = tasks.filter(task => !task.is_claimed && !['nomis2', 'boost', 'invite_3_friends'].includes(task.type));
+
+            if (unclaimedTasks.length === 0) {
+                this.log("Không còn nhiệm vụ chưa hoàn thành.", 'warning');
+                return;
+            }
+
+            for (const task of unclaimedTasks) {
+                const remainingCount = task.max_count ? task.max_count - (task.count || 0) : 1;
                 for (let i = 0; i < remainingCount; i++) {
                     await this.completeTask(authorization, task.type, task.title, i, remainingCount);
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
-            } else {
-                await this.completeTask(authorization, task.type, task.title);
             }
+        } catch (error) {
+            this.log(`Lỗi xử lý nhiệm vụ: ${error.message}`, 'error');
         }
-    }    
+    }
 
     async spinWheel(authorization) {
-        const url = `${this.baseURL}/wheel/spin`;
-        const payload = {};
-        
         try {
-            const response = await axios.post(url, payload, { headers: this.headers(authorization) });
-            const result = response.data.result;
+            const response = await this.makeRequest('POST', `${this.baseURL}/wheel/spin`, {}, authorization);
+            const result = response.result;
             this.log(`Spin thành công: nhận được ${result.reward}`, 'success');
             this.log(`* Balance : ${result.balance}`);
             this.log(`* Toncoin : ${result.toncoin}`);
@@ -144,33 +157,30 @@ class AgentAPI {
                 tickets = result.tickets;
             } catch (error) {
                 this.log(`Lỗi khi spin: ${error.message}`, 'error');
+                break;
             }
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
         this.log('Đã sử dụng hết tickets.', 'warning');
     }
-    
+
     async wheelLoad(authorization) {
-        const url = `${this.baseURL}/wheel/load`;
-        const payload = {};
-        
         try {
-            const response = await axios.post(url, payload, { headers: this.headers(authorization) });
-            return response.data.result;
+            const response = await this.makeRequest('POST', `${this.baseURL}/wheel/load`, {}, authorization);
+            return response.result;
         } catch (error) {
             this.log(`Lỗi khi load wheel: ${error.message}`, 'error');
+            throw error;
         }
     }
 
     async wheelTask(authorization, type) {
-        const url = `${this.baseURL}/wheel/task`;
-        const payload = { type };
-        
         try {
-            const response = await axios.post(url, payload, { headers: this.headers(authorization) });
-            return response.data.result;
+            const response = await this.makeRequest('POST', `${this.baseURL}/wheel/task`, { type }, authorization);
+            return response.result;
         } catch (error) {
             this.log(`Lỗi khi thực hiện nhiệm vụ ${type}: ${error.message}`, 'error');
+            throw error;
         }
     }
 
@@ -211,7 +221,6 @@ class AgentAPI {
             return wheelData;
         } catch (error) {
             this.log(`Lỗi khi xử lý wheel tasks: ${error.message}`, 'error');
-
         }
     }
 
@@ -232,8 +241,8 @@ class AgentAPI {
                     const userInfo = await this.getMe(authorization);
                     this.log(`Balance: ${userInfo.result.balance.toString().white}`, 'success');
                     this.log(`Tickets: ${userInfo.result.tickets.toString().white}`, 'success');
-                    
-                    await this.processTasks(authorization, userInfo.result.tasks);
+
+                    await this.processTasks(authorization);
                     await this.handleWheelTasks(authorization);
 
                     if (userInfo.result.tickets > 0) {
