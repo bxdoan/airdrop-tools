@@ -507,7 +507,7 @@ class GameBot {
                 await this.log(`Bắt đầu chơi game lần thứ ${j + 1}...`, 'success');
                 await new Promise(resolve => setTimeout(resolve, 30000));
                 const randomNumber = Math.floor(Math.random() * (250 - 200 + 1)) + 200;
-                const claimGameResult = await this.claimGame(randomNumber);
+                const claimGameResult = await this.claimGame(2000);
                 if (claimGameResult) {
                   await this.log(`Đã nhận phần thưởng game lần thứ ${j + 1} thành công với ${randomNumber} điểm!`, 'success');
                 }
@@ -653,7 +653,7 @@ async function main() {
     }
 
     const gameBot = new GameBot(null, 0, listProxies[0]);
-    await gameBot.Countdown(14400);
+    await gameBot.Countdown(6000);
   }
 }
 

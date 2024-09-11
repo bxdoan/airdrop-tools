@@ -309,8 +309,11 @@ class AgentAPI {
                     const userInfo = await this.getMe(authorization, proxy);
                     this.log(`Balance: ${userInfo.result.balance.toString().white}`, 'success');
                     this.log(`Tickets: ${userInfo.result.tickets.toString().white}`, 'success');
-                    
-                    await this.processTasks(authorization, userInfo.result.tasks, proxy);
+
+                    const tasks = userInfo.result.tasks;
+                    if (tasks && tasks.length > 0) {
+                        await this.processTasks(authorization, tasks, proxy);
+                    }
                     await this.handleWheelTasks(authorization, proxy);
 
                     if (userInfo.result.tickets > 0) {
