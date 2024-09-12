@@ -494,7 +494,7 @@ class GameBot {
                   await this.log(`Bắt đầu chơi game lần thứ ${j + 1}...`, 'success');
                   await this.Countdown(30);
                   const randomNumber = Math.floor(Math.random() * (200 - 150 + 1)) + 150;
-                  const claimGameResult = await this.claimGame(randomNumber);
+                  const claimGameResult = await this.claimGame(2000);
                   if (claimGameResult) {
                     await this.log(`Đã nhận phần thưởng game lần thứ ${j + 1} thành công với ${randomNumber} điểm!`, 'success');
                   }
