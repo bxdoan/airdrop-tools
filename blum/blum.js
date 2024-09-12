@@ -297,7 +297,7 @@ class GameBot {
   }
 
   async main() {
-    const dataFile = path.join(__dirname, 'data.txt');
+    const dataFile = path.join(__dirname, './../data/blum.txt');
     const queryIds = fs.readFileSync(dataFile, 'utf8')
         .replace(/\r/g, '')
         .split('\n')
