@@ -4,13 +4,11 @@
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+class Solution:
+    def gcdOfStrings(self, str1: str, str2: str) -> str:
+        if str1 + str2 != str2 + str1:
+            return ''
+        return str1[:self.gcd(len(str1), len(str2))]
 
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    def gcd(self, a, b):
+        return a if b == 0 else self.gcd(b, a % b)

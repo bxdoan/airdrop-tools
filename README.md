@@ -46,6 +46,8 @@ Click the link below to join the bot app and get the referral link:
 
 ✅ [IAMDOG](https://t.me/IAMDOG_bot?start=PN38WJ)
 
+✅ [Wonton](https://t.me/WontonOrgBot/gameapp?startapp=referralCode=TBOHDD7V)
+
 ## Set up
 Required: Node.js and Python
 
@@ -152,6 +154,15 @@ npm install
 node cats-proxy.js
 ```
 ![image](imgs/cats.jpg)
+
+### [Wonton](https://t.me/WontonOrgBot/gameapp?startapp=referralCode=TBOHDD7V)
+
+```sh
+cd wonton
+npm install
+node won-proxy.js
+```
+![image](imgs/won.jpg)
 
 ## Contact
 

@@ -640,8 +640,15 @@ function formatProxy(proxy) {
     }
 }
 
-
 if (isMainThread) {
+    if (!fs.existsSync('token.json')) {
+        fs.writeFileSync('token.json', '');
+        fs.appendFile('token.json', '{}', (err) => {
+            if (err) {
+                this.log(`Lỗi khi lưu item vào file: ${err.message}`, 'red');
+            }
+        });
+    }
     const accounts = fs.readFileSync(`${DATA_DIR}/yescoin.txt`, 'utf-8').replace(/\r/g, '').split('\n').filter(Boolean);
     const proxies = fs.readFileSync(`${DATA_DIR}/proxy.txt`, 'utf-8').replace(/\r/g, '').split('\n').filter(Boolean);
     const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
