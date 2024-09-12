@@ -277,7 +277,53 @@ class GameBot {
     }))
   }
 
+  async leaveTribe() {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await this.makeRequest(
+            'POST',
+            'https://tribe-domain.blum.codes/api/v1/tribe/leave',
+            {},
+            true
+        );
+        this.log('Rời tribe thành công', 'success');
+        return;
+      } catch (error) {
+        this.log(`Không thể rời tribe ${attempt}: ${error.message} `, 'error');
+        await this.Countdown(5);
+      }
+    }
+  }
+
+  async checkTribe() {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            const response = await this.makeRequest(
+                'GET',
+                'https://tribe-domain.blum.codes/api/v1/tribe/my',
+                null,
+                true
+            );
+            return response.data;
+        } catch (error) {
+            this.log(`Không thể kiểm tra tribe: ${error.message}`, 'error');
+            await this.Countdown(30);
+        }
+    }
+    return false;
+  }
+
   async joinTribe(tribeId) {
+        const tribeInfo = await this.checkTribe();
+    if (tribeInfo && tribeInfo.id === tribeId) {
+      this.log('Bạn đã ở trong tribe này', 'success');
+      return false;
+    } else if (!tribeInfo) {
+      this.log('Không thể kiểm tra tribe, bỏ qua gia nhập tribe', 'warning');
+    } else {
+      await this.leaveTribe();
+    }
+
     const url = `https:///tribe-domain.blum.codes/api/v1/tribe/${tribeId}/join`;
     try {
       await this.randomDelay();
@@ -331,7 +377,7 @@ class GameBot {
             await this.log(`Số dư: ${balanceInfo.availableBalance}`, 'success');
             await this.log(`Vé chơi game: ${balanceInfo.playPasses}`, 'success');
 
-            const tribeId = 'b372af40-6e97-4782-b70d-4fc7ea435022';
+            const tribeId = 'bcf4d0f2-9ce8-4daf-b06f-34d67152c85d';
             await this.joinTribe(tribeId);
             
             if (!balanceInfo.farming) {
