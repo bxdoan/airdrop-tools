@@ -161,8 +161,9 @@ class KucoinAPIClient {
                     this.log(`Không thể kiểm tra IP của proxy: ${error.message}`, 'warning');
                     continue;
                 }
-                
-                console.log(`========== Tài khoản ${i + 1} | ip: ${proxyIP} ==========`);
+
+
+                console.log(`========== Tài khoản ${i+1}/${cookies.length} | ip: ${proxyIP} ==========`);
                 
                 const points = this.generateRandomPoints(3000, 55);
                 let totalPoints = 0;

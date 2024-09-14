@@ -444,7 +444,19 @@ class XPlusApp {
     }
 
     async main() {
-        const dataFile = 'data.txt';
+        if (!fs.existsSync('check.txt')) {
+            fs.writeFileSync('check.txt', '');
+        }
+        if (!fs.existsSync('token.json')) {
+            fs.writeFileSync('token.json', '');
+            fs.appendFile('token.json', '{}', (err) => {
+                if (err) {
+                    this.log(`Lỗi khi lưu item vào file: ${err.message}`, 'red');
+                }
+            });
+        }
+
+        const dataFile = './../data/wonton.txt';
         const datas = this.loadData(dataFile);
         while (true) { 
             this.firstFinishTime = null;

@@ -418,6 +418,15 @@ class GameBot {
               }
             }
           }
+          if (section.title && section.title === 'Weekly') {
+            if (section.tasks && Array.isArray(section.tasks)){
+              for (const t of section.tasks) {
+                if (t.subTasks && Array.isArray(t.subTasks)) {
+                  allTasks = allTasks.concat(t.subTasks);
+                }
+              }
+            }
+          }
         }
 
         const skipTasks = [
@@ -584,7 +593,7 @@ async function main() {
     .split('\n')
     .filter(Boolean);
 
-  const maxThreads = 20;
+  const maxThreads = 10;
   while (true) {
     let currentIndex = 0;
     let minRemainingTime = Infinity;
