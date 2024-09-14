@@ -1,8 +1,10 @@
 {
   "dependencies": {
     "axios": "^1.7.2",
+    "cloudscraper": "^4.6.0",
+    "color": "^4.2.3",
     "colors": "^1.4.0",
     "https-proxy-agent": "^7.0.5",
-    "luxon": "^3.5.0"
+    "luxon": "^3.4.4"
   }
 }

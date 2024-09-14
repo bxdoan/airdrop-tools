@@ -5,8 +5,6 @@ const path = require('path');
 const { performance } = require('perf_hooks');
 const { DateTime, Duration } = require('luxon');
 const readline = require('readline');
-const { HttpsProxyAgent } = require('https-proxy-agent');
-const axios = require('axios');
 
 class BananaBot {
     constructor() {
@@ -27,43 +25,19 @@ class BananaBot {
             'Sec-Fetch-Site': 'same-site',
             'User-Agent': 'Mozilla/5.0 (Linux; Android 12; Pixel 4 XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.73 Mobile Safari/537.36',
             'X-App-ID': 'carv',
-        };
-        this.proxies = this.loadProxies();
-    }
-
-    loadProxies() {
-        const proxyFile = path.join(__dirname, './../data/proxy.txt');
-        return fs.readFileSync(proxyFile, 'utf8')
-            .replace(/\r/g, '')
-            .split('\n')
-            .filter(Boolean);
-    }
-
-    async checkProxyIP(proxy) {
-        try {
-            const proxyAgent = new HttpsProxyAgent(proxy);
-            const response = await axios.get('https://api.ipify.org?format=json', { httpsAgent: proxyAgent });
-            if (response.status === 200) {
-                return response.data.ip;
-            } else {
-                throw new Error(`Không thể kiểm tra IP của proxy. Status code: ${response.status}`);
-            }
-        } catch (error) {
-            throw new Error(`Error khi kiểm tra IP của proxy: ${error.message}`);
-        }
+        };        
     }
 
     log(msg) {
         console.log(`[*] ${msg}`);
     }
 
-    async makeRequest(method, url, data = null, proxy) {
+    async makeRequest(method, url, data = null) {
         const options = {
             method: method,
             uri: url,
             headers: this.headers,
-            json: true,
-            proxy: proxy
+            json: true
         };
 
         if (data) {
@@ -78,18 +52,14 @@ class BananaBot {
         }
     }
 
-    async login(queryId, proxy) {
+    async login(queryId) {
         const loginPayload = {
             tgInfo: queryId,
             InviteCode: ""
         };
 
         try {
-            const response = await this.makeRequest(
-                'POST', `${this.base_url}/login`,
-                loginPayload,
-                proxy
-            );
+            const response = await this.makeRequest('POST', `${this.base_url}/login`, loginPayload);
             await this.sleep(1000);
 
             if (response.data && response.data.token) {
@@ -104,28 +74,28 @@ class BananaBot {
         }
     }
 
-    async achieveQuest(questId, proxy) {
+    async achieveQuest(questId) {
         const achievePayload = { quest_id: questId };
         try {
-            return await this.makeRequest('POST', `${this.base_url}/achieve_quest`, achievePayload, proxy);
+            return await this.makeRequest('POST', `${this.base_url}/achieve_quest`, achievePayload);
         } catch (error) {
             this.log('Lỗi khi làm nhiệm vụ: ' + error.message);
         }
     }
 
-    async claimQuest(questId, proxy) {
+    async claimQuest(questId) {
         const claimPayload = { quest_id: questId };
         try {
-            return await this.makeRequest('POST', `${this.base_url}/claim_quest`, claimPayload, proxy);
+            return await this.makeRequest('POST', `${this.base_url}/claim_quest`, claimPayload);
         } catch (error) {
             this.log('Lỗi khi claim nhiệm vụ: ' + error.message);
         }
     }
 
-    async doClick(clickCount, proxy) {
+    async doClick(clickCount) {
         const clickPayload = { clickCount: clickCount };
         try {
-            const response = await this.makeRequest('POST', `${this.base_url}/do_click`, clickPayload, proxy);
+            const response = await this.makeRequest('POST', `${this.base_url}/do_click`, clickPayload);
             return response;
         } catch (error) {
             this.log('Lỗi khi tap: ' + error.message);
@@ -133,26 +103,26 @@ class BananaBot {
         }
     }
 
-    async getLotteryInfo(proxy) {
+    async getLotteryInfo() {
         try {
-            return await this.makeRequest('GET', `${this.base_url}/get_lottery_info`, null, proxy);
+            return await this.makeRequest('GET', `${this.base_url}/get_lottery_info`);
         } catch (error) {
             this.log('Lỗi khi lấy thông tin: ' + error.message);
         }
     }
 
-    async claimLottery(proxy) {
+    async claimLottery() {
         const claimPayload = { claimLotteryType: 1 };
         try {
-            return await this.makeRequest('POST', `${this.base_url}/claim_lottery`, claimPayload, proxy);
+            return await this.makeRequest('POST', `${this.base_url}/claim_lottery`, claimPayload);
         } catch (error) {
             this.log('Lỗi không thể harvest: ' + error.message);
         }
     }
 
-    async doLottery(proxy) {
+    async doLottery() {
         try {
-            return await this.makeRequest('POST', `${this.base_url}/do_lottery`, null, proxy);
+            return await this.makeRequest('POST', `${this.base_url}/do_lottery`);
         } catch (error) {
             this.log('Lỗi khi claim tap: ' + error.message);
         }
@@ -187,9 +157,9 @@ class BananaBot {
         });
     }
 
-    async equipBestBanana(currentEquipBananaId, accountIndex, proxy) {
+    async equipBestBanana(currentEquipBananaId, accountIndex) {
         try {
-            const response = await this.makeRequest('GET', `${this.base_url}/get_banana_list`, null, proxy);
+            const response = await this.makeRequest('GET', `${this.base_url}/get_banana_list`);
             const bananas = response.data.banana_list;
 
             const eligibleBananas = bananas.filter(banana => banana.count >= 1);
@@ -231,7 +201,7 @@ class BananaBot {
                 }
 
                 const equipPayload = { bananaId: bestBanana.banana_id };
-                const equipResponse = await this.makeRequest('POST', `${this.base_url}/do_equip`, equipPayload, proxy);
+                const equipResponse = await this.makeRequest('POST', `${this.base_url}/do_equip`, equipPayload);
                 if (equipResponse.code === 0) {
                     this.log(colors.green(`Đã Equip quả chuối tốt nhất: ${colors.yellow(bestBanana.name)} với ${bestBanana.daily_peel_limit} 🍌/ DAY`));
                 } else {
@@ -257,11 +227,11 @@ class BananaBot {
         }));
     }
 
-    async doSpeedup(maxSpeedups = 3, proxy) {
+    async doSpeedup(maxSpeedups = 3) {
         let speedupsPerformed = 0;
         while (speedupsPerformed < maxSpeedups) {
             try {
-                const response = await this.makeRequest('POST', `${this.base_url}/do_speedup`, null, proxy);
+                const response = await this.makeRequest('POST', `${this.base_url}/do_speedup`);
                 if (response.code === 0) {
                     const speedupCount = response.data.speedup_count;
                     const lotteryInfo = response.data.lottery_info;
@@ -270,7 +240,7 @@ class BananaBot {
     
                     if (lotteryInfo.countdown_end === true) {
                         this.log(colors.yellow('Countdown kết thúc. Đang claim lottery...'));
-                        await this.claimLottery(proxy);
+                        await this.claimLottery();
                     }
     
                     if (speedupCount === 0 || speedupsPerformed >= maxSpeedups) {
@@ -288,24 +258,16 @@ class BananaBot {
         }
     }
 
-    async processAccount(queryId, doQuests, accountIndex, proxyUrl) {
+    async processAccount(queryId, doQuests, accountIndex) {
         let remainingTimeMinutes = Infinity;
-        let proxyIP = 'Unknown';
-    
-        try {
-            proxyIP = await this.checkProxyIP(proxyUrl);
-        } catch (error) {
-            this.log(`Không thể kiểm tra IP của proxy: ${error.message}`);
-        }
-    
-        const token = await this.login(queryId, proxyUrl);
+        const token = await this.login(queryId);
         if (token) {
             this.headers['Authorization'] = token;
             this.headers['Cache-Control'] = 'no-cache';
             this.headers['Pragma'] = 'no-cache';
     
             try {
-                const userInfoResponse = await this.makeRequest('GET', `${this.base_url}/get_user_info`, null, proxyUrl);
+                const userInfoResponse = await this.makeRequest('GET', `${this.base_url}/get_user_info`);
                 this.log(colors.green('Đăng nhập thành công !'));
                 await this.sleep(1000);
                 const userInfoData = userInfoResponse;
@@ -323,10 +285,10 @@ class BananaBot {
                 this.log(colors.green(`Speed Up : ${colors.white(speedup)}`));
                 this.log(colors.green(`Hôm nay đã tap : ${colors.white(todayClickCount)} lần`));
     
-                await this.equipBestBanana(currentEquipBananaId, accountIndex, proxyUrl);
-    
+                await this.equipBestBanana(currentEquipBananaId, accountIndex);
+
                 try {
-                    const lotteryInfoResponse = await this.getLotteryInfo(proxyUrl);
+                    const lotteryInfoResponse = await this.getLotteryInfo();
                     await this.sleep(1000);
                     const lotteryInfoData = lotteryInfoResponse;
                     let remainLotteryCount = (lotteryInfoData.data || {}).remain_lottery_count || 0;
@@ -334,9 +296,9 @@ class BananaBot {
     
                     if (remainingTimeMinutes <= 0) {
                         this.log(colors.yellow('Bắt đầu claim...'));
-                        await this.claimLottery(proxyUrl);
+                        await this.claimLottery();
                         
-                        const updatedLotteryInfoResponse = await this.getLotteryInfo(proxyUrl);
+                        const updatedLotteryInfoResponse = await this.getLotteryInfo();
                         await this.sleep(1000);
                         const updatedLotteryInfoData = updatedLotteryInfoResponse;
                         remainLotteryCount = (updatedLotteryInfoData.data || {}).remain_lottery_count || 0;
@@ -346,7 +308,7 @@ class BananaBot {
                     if (speedup > 0) {
                         const maxSpeedups = speedup > 3 ? 3 : speedup;
                         this.log(colors.yellow(`Thực hiện speedup tối đa ${maxSpeedups} lần...`));
-                        const speedupLotteryInfo = await this.doSpeedup(maxSpeedups, proxyUrl);
+                        const speedupLotteryInfo = await this.doSpeedup(maxSpeedups);
                         if (speedupLotteryInfo) {
                             remainingTimeMinutes = this.calculateRemainingTime(speedupLotteryInfo);
                         }
@@ -363,14 +325,14 @@ class BananaBot {
                         this.log('Bắt đầu harvest...');
                         for (let i = 0; i < remainLotteryCount; i++) {
                             this.log(`Đang harvest lần thứ ${i + 1}/${remainLotteryCount}...`);
-                            const doLotteryResponse = await this.doLottery(proxyUrl);
-    
+                            const doLotteryResponse = await this.doLottery();
+
                             if (doLotteryResponse.code === 0) {
                                 const lotteryResult = doLotteryResponse.data || {};
                                 const bananaName = lotteryResult.name || 'N/A';
                                 const sellExchangePeel = lotteryResult.sell_exchange_peel || 'N/A';
                                 const sellExchangeUsdt = lotteryResult.sell_exchange_usdt || 'N/A';
-    
+
                                 this.log(`Harvest thành công ${bananaName}`);
                                 console.log(colors.yellow(`     - Banana Name : ${bananaName}`));
                                 console.log(colors.yellow(`     - Peel Limit : ${lotteryResult.daily_peel_limit || 'N/A'}`));
@@ -402,7 +364,7 @@ class BananaBot {
                         
                         for (const part of parts) {
                             this.log(colors.magenta(`Đang tap ${part} lần...`));
-                            const response = await this.doClick(part, proxyUrl);
+                            const response = await this.doClick(part);
                             if (response && response.code === 0) {
                                 const peel = response.data.peel || 0;
                                 const speedup = response.data.speedup || 0;
@@ -413,13 +375,13 @@ class BananaBot {
                             await this.sleep(1000);
                         }
                 
-                        const userInfoResponse = await this.makeRequest('GET', `${this.base_url}/get_user_info`, null, proxyUrl);
+                        const userInfoResponse = await this.makeRequest('GET', `${this.base_url}/get_user_info`);
                         const userInfo = userInfoResponse.data || {};
                         const updatedSpeedup = userInfo.speedup_count || 0;
                 
                         if (updatedSpeedup > 0) {
                             this.log(colors.yellow(`Thực hiện speedup, bạn có ${updatedSpeedup} lần...`));
-                            const speedupLotteryInfo = await this.doSpeedup(updatedSpeedup, proxyUrl);
+                            const speedupLotteryInfo = await this.doSpeedup();
                             if (speedupLotteryInfo) {
                                 remainingTimeMinutes = this.calculateRemainingTime(speedupLotteryInfo);
                             }
@@ -440,7 +402,7 @@ class BananaBot {
                 
                 if (doQuests) {
                     try {
-                        const questListResponse = await this.makeRequest('GET', `${this.base_url}/get_quest_list`, null, proxyUrl);
+                        const questListResponse = await this.makeRequest('GET', `${this.base_url}/get_quest_list`);
                         await this.sleep(1000);
                         const questListData = questListResponse;
         
@@ -453,20 +415,20 @@ class BananaBot {
                             const questId = quest.quest_id;
         
                             if (!isAchieved) {
-                                await this.achieveQuest(questId, proxyUrl);
+                                await this.achieveQuest(questId);
                                 await this.sleep(1000);
         
-                                const updatedQuestListResponse = await this.makeRequest('GET', `${this.base_url}/get_quest_list`, null, proxyUrl);
+                                const updatedQuestListResponse = await this.makeRequest('GET', `${this.base_url}/get_quest_list`);
                                 const updatedQuestListData = updatedQuestListResponse;
                                 const updatedQuest = updatedQuestListData.data.quest_list.find(q => q.quest_id === questId);
                                 isAchieved = updatedQuest.is_achieved || false;
                             }
         
                             if (isAchieved && !isClaimed) {
-                                await this.claimQuest(questId, proxyUrl);
+                                await this.claimQuest(questId);
                                 await this.sleep(1000);
         
-                                const updatedQuestListResponse = await this.makeRequest('GET', `${this.base_url}/get_quest_list`, null, proxyUrl);
+                                const updatedQuestListResponse = await this.makeRequest('GET', `${this.base_url}/get_quest_list`);
                                 const updatedQuestListData = updatedQuestListResponse;
                                 const updatedQuest = updatedQuestListData.data.quest_list.find(q => q.quest_id === questId);
                                 isClaimed = updatedQuest.is_claimed || false;
@@ -489,7 +451,7 @@ class BananaBot {
         
                         if (isClaimedQuestLottery) {
                             this.log(colors.yellow(`Claim quest có sẵn: ${progress}`));
-                            const claimQuestLotteryResponse = await this.makeRequest('POST', `${this.base_url}/claim_quest_lottery`, null, proxyUrl);
+                            const claimQuestLotteryResponse = await this.makeRequest('POST', `${this.base_url}/claim_quest_lottery`);
                             if (claimQuestLotteryResponse.code === 0) {
                                 this.log(colors.green('Claim quest thành công!'));
                             } else {
@@ -507,10 +469,10 @@ class BananaBot {
             } catch (error) {
                 this.log('Không thể tìm nạp thông tin người dùng và danh sách nhiệm vụ do thiếu mã thông báo.');
             }
-            return { remainingTimeMinutes, proxyIP };
+            return remainingTimeMinutes;
         }
-        return { remainingTimeMinutes: null, proxyIP };
-    }
+        return null;
+    }    
 
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -536,19 +498,6 @@ class BananaBot {
         console.log('');
     }    
 
-    formatProxy(proxy) {
-        // from ip:port:user:pass to http://user:pass@ip:port
-        if (proxy.startsWith('http')) {
-            return proxy;
-        }
-        const parts = proxy.split(':');
-        if (parts.length === 4) {
-          return `http://${parts[2]}:${parts[3]}@${parts[0]}:${parts[1]}`
-        } else {
-          return `http://${parts[0]}:${parts[1]}`;
-        }
-    }
-
     async main() {
         const dataFile = path.join(__dirname, './../data/banana.txt');
         const userData = fs.readFileSync(dataFile, 'utf8')
@@ -566,12 +515,10 @@ class BananaBot {
                 const queryId = userData[i];
                 const data = this.extractUserData(queryId);
                 const userDetail = data.user;
-                const proxyIndex = i % this.proxies.length;
-                const proxyUrl = this.formatProxy(this.proxies[proxyIndex]);
                 
                 if (queryId) {
-                    const { remainingTime, proxyIP } = await this.processAccount(queryId, doQuests, i, proxyUrl);
-                    console.log(`\n========== Tài khoản ${i + 1} | ${userDetail.first_name} | IP: ${proxyIP} ==========`);
+                    console.log(`\n========== Tài khoản ${i + 1} | ${userDetail.first_name} ==========`);
+                    const remainingTime = await this.processAccount(queryId, doQuests, i);
 
                     if (remainingTime !== null && remainingTime < minRemainingTime) {
                         minRemainingTime = remainingTime;
