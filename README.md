@@ -48,6 +48,8 @@ Click the link below to join the bot app and get the referral link:
 
 ✅ [Wonton](https://t.me/WontonOrgBot/gameapp?startapp=referralCode=TBOHDD7V)
 
+✅ [Sunkong](https://t.me/sunkongmyth_bot/sunkong_miniapp?startapp=25D8F1E09)
+
 ## Set up
 Required: Node.js and Python
 
