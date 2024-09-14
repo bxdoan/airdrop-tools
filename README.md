@@ -164,6 +164,15 @@ node won-proxy.js
 ```
 ![image](imgs/won.jpg)
 
+### [Xkucoin](https://t.me/xkucoinbot/kucoinminiapp?startapp=cm91dGU9JTJGdGFwLWdhbWUlM0ZpbnZpdGVyVXNlcklkJTNEMzk5MTk5NjQ1JTI2cmNvZGUlM0Q=)
+
+```sh
+cd xkucoin
+npm install
+node x-proxy.js
+```
+![image](imgs/xkucoin.jpg)
+
 ## Contact
 
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bxdoan)

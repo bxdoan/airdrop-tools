@@ -100,7 +100,7 @@ class KucoinAPIClient {
     }
 
     async main() {
-        const dataFile = path.join(__dirname, 'data.txt');
+        const dataFile = path.join(__dirname, './../data/xkucoin.txt');
         const cookies = fs.readFileSync(dataFile, 'utf8')
             .replace(/\r/g, '')
             .split('\n')
