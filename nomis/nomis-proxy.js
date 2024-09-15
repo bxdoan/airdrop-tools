@@ -9,16 +9,14 @@ const { HttpsProxyAgent } = require('https-proxy-agent');
 class Nomis {
     constructor() {
         this.currentAppInitData = '';
-        this.listProxies = [];
-        this.indexProxies = 0;
     }
 
-    headers(includeAppInitData = true) {
-        const baseHeaders = {
+    headers() {
+        return {
+            "Content-Type": "application/json",
             "Accept": "application/json, text/plain, */*",
             "Accept-Language": "vi-VN,vi;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6,en;q=0.5",
             "Authorization": "Bearer 8e25d2673c5025dfcd36556e7ae1b330095f681165fe964181b13430ddeb385a0844815b104eff05f44920b07c073c41ff19b7d95e487a34aa9f109cab754303cd994286af4bd9f6fbb945204d2509d4420e3486a363f61685c279ae5b77562856d3eb947e5da44459089b403eb5c80ea6d544c5aa99d4221b7ae61b5b4cbb55",
-            "Content-Type": "application/json",
             "Origin": "https://telegram.nomis.cc",
             "Referer": "https://telegram.nomis.cc/",
             "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
@@ -27,14 +25,9 @@ class Nomis {
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-site",
-            "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+            "X-App-Init-Data": this.currentAppInitData
         };
-
-        if (includeAppInitData) {
-            baseHeaders["X-App-Init-Data"] = this.currentAppInitData;
-        }
-
-        return baseHeaders;
     }
 
     async requestWithProxy(config, proxy) {
@@ -171,7 +164,7 @@ class Nomis {
         }
         console.log('');
     }
-	
+
     async checkProxyIP(proxy) {
         try {
             const proxyAgent = new HttpsProxyAgent(proxy);
@@ -201,18 +194,9 @@ class Nomis {
         }
     }
 
-    getProxy() {
-        const proxy = this.listProxies[this.indexProxies];
-        this.indexProxies++;
-        if (this.indexProxies >= this.listProxies.length) {
-          this.indexProxies = 0;
-        }
-        return proxy;
-    }
-
     async main() {
         let firstFarmCompleteTime = null;
-    
+
         while (true) {
             const dataFile = path.join(__dirname, './../data/nomis.txt');
             const proxyFile = path.join(__dirname, './../data/proxy.txt');
@@ -220,14 +204,15 @@ class Nomis {
                 .replace(/\r/g, '')
                 .split('\n')
                 .filter(Boolean);
-            this.listProxies = fs.readFileSync(proxyFile, 'utf8')
+            const proxies = fs.readFileSync(proxyFile, 'utf8')
                 .replace(/\r/g, '')
                 .split('\n')
                 .filter(Boolean);
 
             for (let no = 0; no < data.length; no++) {
                 const appInitData = data[no];
-                const proxy = this.formatProxy(this.getProxy());
+                const proxyIndex = no % proxies.length;
+                const proxy = this.formatProxy(proxies[proxyIndex]);
                 this.currentAppInitData = appInitData;
 
                 const userMatch = appInitData.match(/user=%7B%22id%22%3A(\d+).*?%22username%22%3A%22(.*?)%22/);
@@ -249,17 +234,17 @@ class Nomis {
                     const profileData = authResponse.data;
                     if (profileData && profileData.id) {
                         const userId = profileData.id;
-                        
-                        console.log(`========== Tài khoản ${no + 1} | ${telegram_username.green} | IP: ${proxyIP} ==========`);
-    
+
+                        console.log(`========== Tài khoản ${no+1}/${data.length} | ${telegram_username.green} | IP: ${proxyIP} ==========`);
+
                         const farmDataResponse = await this.getProfile(userId, proxy);
                         const farmData = farmDataResponse.data;
                         const points = farmData.points / 1000;
                         const nextfarm = farmData.nextFarmClaimAt;
-    
+
                         this.log(`${'Balance:'.green} ${points}`);
                         let claimFarmSuccess = false;
-    
+
                         if (nextfarm) {
                             const nextFarmLocal = DateTime.fromISO(nextfarm, { zone: 'utc' }).setZone(DateTime.local().zoneName);
                             this.log(`${'Thời gian hoàn thành farm:'.green} ${nextFarmLocal.toLocaleString(DateTime.DATETIME_FULL)}`);
@@ -280,7 +265,7 @@ class Nomis {
                         } else {
                             claimFarmSuccess = true;
                         }
-    
+
                         if (claimFarmSuccess) {
                             try {
                                 await this.startFarm(userId, proxy);
@@ -289,23 +274,23 @@ class Nomis {
                                 this.log(`${'Lỗi khi start farm!'.red}`);
                             }
                         }
-    
+
                         try {
                             const getTaskResponse = await this.getTask(userId, proxy);
                             const tasks = getTaskResponse.data;
-    
+
                             const kiemtraTaskResponse = await this.kiemtraTask(userId, proxy);
                             const completedTasks = kiemtraTaskResponse.data.flatMap(taskGroup => taskGroup.ton_twa_tasks);
-    
+
                             const completedTaskIds = new Set(completedTasks.map(task => task.id));
-    
+
                             const pendingTasks = tasks.flatMap(taskGroup => taskGroup.ton_twa_tasks)
-                                .filter(task => 
-                                    task.reward > 0 && 
+                                .filter(task =>
+                                    task.reward > 0 &&
                                     !completedTaskIds.has(task.id) &&
                                     !['telegramAuth', 'pumpersToken', 'pumpersTrade'].includes(task.handler)
                                 );
-    
+
                             for (const task of pendingTasks) {
                                 const result = await this.claimTask(userId, task.id, proxy);
                                 this.log(`${'Làm nhiệm vụ'.yellow} ${task.title.white}... ${'Trạng thái:'.white} ${'Hoàn thành'.green}`);
@@ -322,7 +307,7 @@ class Nomis {
                                 if (referralData.nextReferralsClaimAt) {
                                     const nextReferralsClaimLocal = DateTime.fromISO(referralData.nextReferralsClaimAt, { zone: 'utc' }).setZone(DateTime.local().zoneName);
                                     this.log(`${'Thời gian claim referrals tiếp theo:'.green} ${nextReferralsClaimLocal.toLocaleString(DateTime.DATETIME_FULL)}`);
-                        
+
                                     const now = DateTime.local();
                                     if (now > nextReferralsClaimLocal) {
                                         const claimResponse = await this.claimReferral(userId, proxy);
@@ -346,12 +331,14 @@ class Nomis {
                             }
                         } catch (error) {
                             this.log(`${'Lỗi khi xử lý referrals'.red}`);
+                            console.log(error);
                         }
                     } else {
                         this.log(`${'Lỗi: Không tìm thấy ID người dùng'.red}`);
                     }
                 } catch (error) {
                     this.log(`${'Lỗi khi xử lý tài khoản'.red}`);
+                    console.log(error);
                 }
             }
     
