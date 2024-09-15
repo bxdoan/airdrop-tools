@@ -8,6 +8,7 @@ bip-utils = "*"
 web3 = "*"
 python-dotenv = "*"
 colorama = "*"
+cloudscraper = "*"
 
 [requires]
 python_version = "3.11"
