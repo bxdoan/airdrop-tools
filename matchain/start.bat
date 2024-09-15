@@ -1,5 +1,4 @@
 @echo off
-echo Starting the bot...
-npm install
+echo Starting the Matchain bot...
 node mat-proxy.js
 pause

@@ -54,7 +54,7 @@ class AgentAPI {
         for (let i = seconds; i >= 0; i--) {
             readline.cursorTo(process.stdout, 0);
             process.stdout.write(`[${new Date().toLocaleTimeString()}] [*] Chờ ${i} giây để tiếp tục...`);
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            await new Promise(resolve => setTimeout(resolve, 10000));
         }
         console.log('');
     }
