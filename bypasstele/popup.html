@@ -26,24 +26,7 @@
             margin-bottom: 5px;
             color: #555;
         }
-        input[type="number"] {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
-        .checkbox-container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .checkbox-container label {
-            margin-bottom: 0;
-            margin-right: 10px;
-        }
-        .btn-reset, #saveButton {
+        .btn-get-query-id {
             background-color: #008CBA; 
             color: white;
             padding: 10px 20px;
@@ -56,7 +39,7 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        .btn-reset:hover, #saveButton:hover {
+        .btn-get-query-id:hover {
             background-color: #005f73;
         }
         #message {
@@ -71,8 +54,12 @@
     </style>
 </head>
 <body>
-    <h1>Settings</h1>
+    <h1>Đã sợ thì đừng dùng, đã dùng thì đừng sợ.</h1>
+    <button class="btn-get-query-id">Lấy query_id</button>
+    <div id="message">Đã lấy được query_id!</div>
+
     <div class="stat"><span>Tải Extension Tại Tele <a href="https://t.me/dancayairdrop">Dân Cày Airdrop</a></span></div>
-    
+
+    <script src="popup.js"></script>
 </body>
 </html>

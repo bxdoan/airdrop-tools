@@ -9,27 +9,77 @@
         }
     });
 
-function webtoadr() {
-    try {
-        document.querySelectorAll('iframe').forEach(iframe => {
-            let src = iframe.getAttribute('src');
-            if (src && src.includes('tgWebAppPlatform=web')) {
-                src = src.replace(/tgWebAppPlatform=web[a-z]?/, 'tgWebAppPlatform=android');
-                iframe.setAttribute('src', src);
-            }
-        });
+    function webtoadr() {
+        try {
+            document.querySelectorAll('iframe').forEach(iframe => {
+                let src = iframe.getAttribute('src');
+                console.log('Iframe SRC:', src);
 
-                console.log('Dân Cày Airdrop');
+                if (src && src.includes('tgWebAppPlatform=web')) {
+                    src = src.replace(/tgWebAppPlatform=web[a-z]?/, 'tgWebAppPlatform=android');
+                    iframe.setAttribute('src', src);
+                }
+            });
 
-    } catch (error) {
-        console.error('Lỗi rồi:', error);
+            console.log('Dân Cày Airdrop');
+        } catch (error) {
+            console.error('Lỗi rồi:', error);
+        }
     }
-}
-
 
     try {
         webtoadr();
     } catch (error) {
         console.error('Lỗi rồi:', error);
     }
+
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.action === 'getQueryId') {
+            function checkIframe(retries = 3) {
+                const game = document.querySelector('iframe');
+
+                if (game) {
+                    const src = game.getAttribute('src');
+                    console.log('SRC found:', src);
+
+                    if (src) {
+                        const startIndex = src.indexOf('#tgWebAppData=') + '#tgWebAppData='.length;
+                        const endIndex = src.indexOf('&', startIndex);
+                        
+                        if (startIndex !== -1 && endIndex !== -1) {
+                            let query_id = src.substring(startIndex, endIndex);
+                            query_id = decodeURIComponent(query_id);
+                            console.log('Đã lấy được Query ID:', query_id);
+                            
+                            sendResponse({ query_id });
+                        } else {
+                            console.log('Query ID not found in src.');
+                            sendResponse({ query_id: null });
+                        }
+                    } else {
+                        console.log('Không tìm thấy iframe.');
+
+                        if (retries > 0) {
+                            console.log(`Thử lại... (${3 - retries + 1})`);
+                            setTimeout(() => checkIframe(retries - 1), 500);
+                        } else {
+                            sendResponse({ query_id: null });
+                        }
+                    }
+                } else {
+                    console.log('Iframe not found.');
+
+                    if (retries > 0) {
+                        console.log(`Thử lại... (${3 - retries + 1})`);
+                        setTimeout(() => checkIframe(retries - 1), 500);
+                    } else {
+                        sendResponse({ query_id: null });
+                    }
+                }
+            }
+
+            checkIframe();
+            return true;
+        }
+    });
 })();
