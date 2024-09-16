@@ -1,11 +1,10 @@
 const axios = require('axios');
 const https = require('https');
-const path = require('path');
 const { parse } = require('querystring');
-const colors = require('colors');
 const { execSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
+const colors = require('colors');
 const { DateTime } = require('luxon');
 const HttpsProxyAgent = require('https-proxy-agent').HttpsProxyAgent;
 const minimist = require('minimist');
@@ -25,21 +24,18 @@ const headers = {
     "accept-language": "en,en-US;q=0.9"
 };
 
-// try load ./../.env file and get DATA_DIR environment variable
-try {
-    require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
-}
-catch (error) {
-    console.error('Không thể load file .env');
-}
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
-
-
 class Matchain {
     constructor() {
         this.headers = { ...headers };
-        this.proxies = [];
         this.autogame = true;
+        this.proxies = this.loadProxies('./../data/proxy.txt');
+    }
+
+    loadProxies(file) {
+        return fs.readFileSync(file, 'utf-8')
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line !== '');
     }
 
     async checkProxyIP(proxy) {
@@ -253,10 +249,8 @@ class Matchain {
             this.log(`Balance: ${balance + _data}`, 'info');
         }
 
-        const taskNames = await this.getTaskList(user['id'], proxy);
-        for (let taskType of taskNames) {
-            await this.completeTask(user['id'], taskType, proxy);
-        }
+        await this.processTasks(this.userid, proxy);
+
 
         const updatedTaskStatus = await this.checkDailyTaskStatus(proxy);
         if (updatedTaskStatus && updatedTaskStatus.gameNeedsPurchase) {
@@ -333,54 +327,75 @@ class Matchain {
 
         const data = res.data.data;
 
-        if (!data || !Array.isArray(data.Tasks)) {
+        if (!data) {
             this.log('Dữ liệu không hợp lệ', 'error');
             return false;
         }
 
-        const extraTasks = Array.isArray(data['Extra Tasks']) ? data['Extra Tasks'] : [];
-        const ecoTasks = Array.isArray(data['Matchain Ecosystem']) ? data['Matchain Ecosystem'] : [];
-        const allTasks = [...data.Tasks, ...extraTasks, ...ecoTasks];
-        const filteredTasks = allTasks.filter(task => task.complete === false && task.name !== "join_match_group");
-        const taskNames = filteredTasks.map(task => task.name);
-        return taskNames;
+        let allTasks = [];
+
+        ['Matchain Ecosystem', 'Tasks', 'Extra Tasks'].forEach(category => {
+            if (Array.isArray(data[category])) {
+                allTasks = allTasks.concat(data[category].map(task => ({
+                    ...task,
+                    category: category
+                })));
+            }
+        });
+
+        allTasks.sort((a, b) => a.sort - b.sort);
+
+        return allTasks;
     }
 
-    async completeTask(uid, taskType, proxy) {
+    async completeTask(uid, task, proxy) {
         const url = "https://tgapp-api.matchain.io/api/tgapp/v1/point/task/complete";
-        const payload = JSON.stringify({ "uid": uid, "type": taskType });
+        const payload = JSON.stringify({ "uid": uid, "type": task.name });
 
         let res = await this.http(url, this.headers, payload, proxy);
         if (res.status !== 200) {
-            this.log(`Lỗi khi hoàn thành nhiệm vụ ${taskType}! Status: ${res.status}`, 'error');
+            this.log(`Lỗi khi hoàn thành nhiệm vụ ${task.name}! Status: ${res.status}`, 'error');
             this.log(`Response: ${JSON.stringify(res.data)}`, 'error');
             return false;
         }
 
-        const rewardClaimed = await this.claimReward(uid, taskType, proxy);
+        const rewardClaimed = await this.claimReward(uid, task, proxy);
         return rewardClaimed;
     }
 
-    async claimReward(uid, taskType, proxy) {
+    async claimReward(uid, task, proxy) {
         const url = "https://tgapp-api.matchain.io/api/tgapp/v1/point/task/claim";
-        const payload = JSON.stringify({ "uid": uid, "type": taskType });
+        const payload = JSON.stringify({ "uid": uid, "type": task.name });
 
         let res = await this.http(url, this.headers, payload, proxy);
         if (res.status !== 200) {
-            this.log(`Lỗi khi nhận phần thưởng nhiệm vụ ${taskType}! Status: ${res.status}`, 'error');
-            this.log(`Response: ${JSON.stringify(res.data)}`, 'error');
+            this.log(`Lỗi khi nhận phần thưởng nhiệm vụ ${task.name}! Status: ${res.status}`, 'error');
             return false;
         }
 
         if (res.data.code === 200 && res.data.data === 'success') {
-            this.log(`${'Làm nhiệm vụ'.yellow} ${taskType.white} ... ${'Trạng thái:'.white} ${'Hoàn thành'.green}`);
+            this.log(`${'Làm nhiệm vụ'.yellow} ${task.name.white} ... ${'Trạng thái:'.white} ${'Hoàn thành'.green}`);
         } else {
-            this.log(`${'Làm nhiệm vụ'.yellow} ${taskType.white} ... ${'Trạng thái:'.white} ${'Thất bại'.red}`);
-            this.log(`Response: ${JSON.stringify(res.data)}`, 'error');
+            this.log(`${'Làm nhiệm vụ'.yellow} ${task.name.white} ... ${'Trạng thái:'.white} ${'Thất bại'.red}`);
             return false;
         }
 
         return true;
+    }
+
+    async processTasks(uid, proxy) {
+        const allTasks = await this.getTaskList(uid, proxy);
+        if (!allTasks) {
+            this.log('Không thể lấy danh sách nhiệm vụ', 'error');
+            return;
+        }
+
+        for (const task of allTasks) {
+            if (!task.complete) {
+                await this.completeTask(uid, task, proxy);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
     }
 
     async buyTicket(token, userId, proxy) {
@@ -479,19 +494,9 @@ class Matchain {
         this.autogame = true;
 
         while (true) {
-            const dataFile = path.join(`${DATA_DIR}/matchain.txt`);
-            const proxyFile = path.join(`${DATA_DIR}/proxy.txt`);
-            const data = fs.readFileSync(dataFile, 'utf8')
-                .split('\n')
-                .map(line => line.trim())
-                .filter(line => line !== '');
-            this.proxies = fs.readFileSync(proxyFile, 'utf8')
-                .replace(/\r/g, '')
-                .split('\n')
-                .filter(Boolean);
-
             const list_countdown = [];
             const start = Math.floor(Date.now() / 1000);
+            const data = this.load_data(args['--data'] || './../data/matchain.txt');
             for (let [no, item] of data.entries()) {
                 const parser = this.dancay(item);
                 const userEncoded = decodeURIComponent(parser['user']);
@@ -510,7 +515,6 @@ class Matchain {
                 } catch (error) {
                     this.log(`Lỗi kiểm tra IP proxy: ${error.message}`, 'warning');
                 }
-
                 console.log(`========== Tài khoản ${no + 1}/${data.length} | ${user['first_name'].green} | ip: ${proxyIP} ==========`);
                 try {
                     const result = await this.login(item, proxy);
