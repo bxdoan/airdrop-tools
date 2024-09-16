@@ -214,6 +214,23 @@ def fetch_squad_info(token):
         return None
 
 
+def leave_squad(token):
+    url = 'https://api-backend.yescoin.gold/squad/leaveSquad'
+    headers = get_headers(token)
+    data = json.dumps({})
+    try:
+        response = requests.post(url, headers=headers, data=data)
+        response.raise_for_status()
+        data = response.json()
+        if data['code'] == 0:
+            return data
+        else:
+            return None
+    except Exception as e:
+        print(f"Error fetching squad info: {e}")
+        return None
+
+
 def join_squad(token, squad_link):
     url = 'https://api.yescoin.gold/squad/joinSquad'
     headers = get_headers(token)
@@ -374,16 +391,27 @@ def process_account(token, ind, total):
         squad_title = squad_info['data']['squadInfo']['squadTitle']
         squad_members = squad_info['data']['squadInfo']['squadMembers']
         print(f"{random.choice(available_colors) + Style.BRIGHT}\r[ Squad ] : {squad_title} | {squad_members} Members")
+        leave_squad_info = leave_squad(token)
+        if leave_squad_info:
+            print(f"{Fore.YELLOW + Style.BRIGHT}\r[ Squad ] : Left Squad. Joining VP Airdrop.", end="", flush=True)
+            time.sleep(3)
+            join_result = join_squad(token, "t.me/vp_airdrop")
+            if join_result:
+                print(f"{random.choice(available_colors) + Style.BRIGHT}\r[ Squad ] : "
+                      f"Welcome VP Airdrop {nickname} - Done !      ",flush=True)
+            else:
+                print(f"{random.choice(available_colors) + Style.BRIGHT}\r[ Squad ] : "
+                      f"Failed to join VP Airdrop .", flush=True)
     else:
-        print(f"{Fore.YELLOW + Style.BRIGHT}\r[ Squad ] : Belum Join Squad. Joining Ghalibie.", end="", flush=True)
+        print(f"{Fore.YELLOW + Style.BRIGHT}\r[ Squad ] : Join Squad. Joining VP Airdrop.", end="", flush=True)
         time.sleep(3)
-        join_result = join_squad(token, "t.me/ghalibie")
+        join_result = join_squad(token, "t.me/vp_airdrop")
         if join_result:
             print(
-                f"{random.choice(available_colors) + Style.BRIGHT}\r[ Squad ] : Welcome Pemulung {nickname} - Ghalibie !      ",
+                f"{random.choice(available_colors) + Style.BRIGHT}\r[ Squad ] : Welcome VP Airdrop {nickname} - Ghalibie !      ",
                 flush=True)
         else:
-            print(f"{random.choice(available_colors) + Style.BRIGHT}\r[ Squad ] : Failed to join Ghalibie.", flush=True)
+            print(f"{random.choice(available_colors) + Style.BRIGHT}\r[ Squad ] : Failed to join VP Airdrop .", flush=True)
 
     print(f"{random.choice(available_colors) + Style.BRIGHT}\r[ Balance ] : Getting...", end="", flush=True)
     balance = fetch_account_info(token)
