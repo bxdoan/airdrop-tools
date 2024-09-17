@@ -541,7 +541,7 @@ class GameBot {
               if (playResult) {
                 await this.log(`Bắt đầu chơi game lần thứ ${j + 1}...`, 'success');
                 await new Promise(resolve => setTimeout(resolve, 30000));
-                const randomNumber = Math.floor(Math.random() * (200 - 150 + 1)) + 150;
+                const randomNumber = Math.floor(Math.random() * (300 - 250 + 1)) + 250;
                 const claimGameResult = await this.claimGame(randomNumber);
                 if (claimGameResult) {
                   await this.log(`Đã nhận phần thưởng game lần thứ ${j + 1} thành công với ${randomNumber} điểm!`, 'success');
