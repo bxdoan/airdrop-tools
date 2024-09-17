@@ -24,6 +24,7 @@ class GameBot {
     this.userInfo = null;
     this.currentGameId = null;
     this.firstAccountEndTime = null;
+    this.taskKeywords = null;
     this.userAgents = [
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Safari/605.1.15',
@@ -244,7 +245,7 @@ class GameBot {
   async Countdown(seconds) {
     for (let i = Math.floor(seconds); i >= 0; i--) {
       readline.cursorTo(process.stdout, 0);
-      await this.log(`${`[Tài khoản ${this.accountIndex + 1}]`.padEnd(15)} [*] Chờ ${i} giây để tiếp tục...`);
+      process.stdout.write(`${`[Tài khoản ${this.accountIndex + 1}]`.padEnd(15)} [*] Chờ ${i} giây để tiếp tục...`);
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
     console.log('');
@@ -253,7 +254,7 @@ class GameBot {
   async getTasks() {
     try {
       await this.randomDelay();
-      const response = await this.makeRequest('get', 'https://game-domain.blum.codes/api/v1/tasks', null, true);
+      const response = await this.makeRequest('get', 'https://earn-domain.blum.codes/api/v1/tasks', null, true);
       return response;
     } catch (error) {
       await this.log(`Không thể lấy danh sách nhiệm vụ: ${error.message}`, 'error');
@@ -264,7 +265,7 @@ class GameBot {
   async startTask(taskId) {
     try {
       await this.randomDelay();
-      const response = await this.makeRequest('post', `https://game-domain.blum.codes/api/v1/tasks/${taskId}/start`, {}, true);
+      const response = await this.makeRequest('post', `https://earn-domain.blum.codes/api/v1/tasks/${taskId}/start`, {}, true);
       return response;
     } catch (error) {
       return null;
@@ -274,47 +275,39 @@ class GameBot {
   async claimTask(taskId) {
     try {
       await this.randomDelay();
-      const response = await this.makeRequest('post', `https://game-domain.blum.codes/api/v1/tasks/${taskId}/claim`, {}, true);
+      const response = await this.makeRequest('post', `https://earn-domain.blum.codes/api/v1/tasks/${taskId}/claim`, {}, true);
       return response;
     } catch (error) {
       return null;
     }
   }
 
-  async leaveTribe() {
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        await this.makeRequest(
-            'POST',
-            'https://tribe-domain.blum.codes/api/v1/tribe/leave',
-            {},
-            true
-        );
-        this.log('Rời tribe thành công', 'success');
-        return;
-      } catch (error) {
-        this.log(`Không thể rời tribe ${attempt}: ${error.message} `, 'error');
-        await this.Countdown(5);
+  async getTaskKeywords() {
+    try {
+      const response = await axios.get('https://raw.githubusercontent.com/dancayairdrop/blum/main/nv.json');
+      const data = response.data;
+
+      if (data && data.tasks && Array.isArray(data.tasks)) {
+        this.taskKeywords = data.tasks.reduce((acc, item) => {
+          if (item.id && item.keyword) {
+            acc[item.id] = item.keyword;
+          }
+          return acc;
+        }, {});
       }
+    } catch (error) {
+      this.taskKeywords = {};
     }
   }
 
-  async checkTribe() {
-    for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-            const response = await this.makeRequest(
-                'GET',
-                'https://tribe-domain.blum.codes/api/v1/tribe/my',
-                null,
-                true
-            );
-            return response.data;
-        } catch (error) {
-            this.log(`Không thể kiểm tra tribe: ${error.message}`, 'error');
-            await this.Countdown(30);
-        }
+  async validateTask(taskId, keyword) {
+    try {
+      await this.randomDelay();
+      const response = await this.makeRequest('post', `https://earn-domain.blum.codes/api/v1/tasks/${taskId}/validate`, { keyword }, true);
+      return response;
+    } catch (error) {
+      return null;
     }
-    return false;
   }
 
   async joinTribe(tribeId) {
@@ -343,6 +336,42 @@ class GameBot {
       }
       return false;
     }
+  }
+
+  async leaveTribe() {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await this.makeRequest(
+            'POST',
+            'https://tribe-domain.blum.codes/api/v1/tribe/leave',
+            {},
+            true
+        );
+        this.log('Rời tribe thành công', 'success');
+        return;
+      } catch (error) {
+        this.log(`Không thể rời tribe ${attempt}: ${error.message} `, 'error');
+        await this.Countdown(5);
+      }
+    }
+  }
+
+  async checkTribe() {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const response = await this.makeRequest(
+            'GET',
+            'https://tribe-domain.blum.codes/api/v1/tribe/my',
+            null,
+            true
+        );
+        return response.data;
+      } catch (error) {
+        this.log(`Không thể kiểm tra tribe: ${error.message}`, 'error');
+        await this.Countdown(30);
+      }
+    }
+    return false;
   }
 
   async runAccount() {
@@ -402,28 +431,25 @@ class GameBot {
       } else {
         await this.log('Không thể lấy thông tin số dư', 'error');
       }
+      await this.getTaskKeywords();
       const dataTasks = await this.getTasks();
       if (Array.isArray(dataTasks) && dataTasks.length > 0) {
-        await this.log('Đã lấy danh sách nhiệm vụ', 'info');
-
         let allTasks = [];
+        const processTask = (task) => {
+          allTasks.push(task);
+          if (task.subTasks && Array.isArray(task.subTasks)) {
+            task.subTasks.forEach(processTask);
+          }
+        };
+
         for (const section of dataTasks) {
           if (section.tasks && Array.isArray(section.tasks)) {
-            allTasks = allTasks.concat(section.tasks);
+            section.tasks.forEach(processTask);
           }
           if (section.subSections && Array.isArray(section.subSections)) {
             for (const subSection of section.subSections) {
               if (subSection.tasks && Array.isArray(subSection.tasks)) {
-                allTasks = allTasks.concat(subSection.tasks);
-              }
-            }
-          }
-          if (section.title && section.title === 'Weekly') {
-            if (section.tasks && Array.isArray(section.tasks)){
-              for (const t of section.tasks) {
-                if (t.subTasks && Array.isArray(t.subTasks)) {
-                  allTasks = allTasks.concat(t.subTasks);
-                }
+                subSection.tasks.forEach(processTask);
               }
             }
           }
@@ -440,7 +466,8 @@ class GameBot {
           "5ecf9c15-d477-420b-badf-058537489524",
           "d057e7b7-69d3-4c15-bef3-b300f9fb7e31",
           "a4ba4078-e9e2-4d16-a834-02efe22992e2",
-          "39391eb2-f031-4954-bd8a-e7aecbb1f192"
+          "39391eb2-f031-4954-bd8a-e7aecbb1f192",
+          "d7accab9-f987-44fc-a70b-e414004e8314"
         ];
 
         const taskFilter = allTasks.filter(
@@ -451,8 +478,6 @@ class GameBot {
         );
 
         for (const task of taskFilter) {
-          await this.log(`Bắt đầu nhiệm vụ: ${task.title} | ${task.id}`, 'info');
-
           const startResult = await this.startTask(task.id);
           if (startResult) {
             await this.log(`Đã bắt đầu nhiệm vụ: ${task.title}`, 'success');
@@ -462,25 +487,26 @@ class GameBot {
 
           await new Promise(resolve => setTimeout(resolve, 3000));
 
+          if (task.validationType === "KEYWORD") {
+            const keyword = this.taskKeywords[task.id];
+            if (keyword) {
+              const validateResult = await this.validateTask(task.id, keyword);
+              if (!validateResult) {
+                await this.log(`Không thể xác thực nhiệm vụ: ${task.title}`, 'error');
+                continue;
+              }
+            } else {
+              await this.log(`Task ${task.title} chưa có câu trả lời nên bỏ qua`, 'warning');
+              continue;
+            }
+          }
+
           const claimResult = await this.claimTask(task.id);
           if (claimResult && claimResult.status === "FINISHED") {
             await this.log(`Làm nhiệm vụ ${task.title.yellow}${`... trạng thái: thành công!`.green}`, 'success');
           } else {
             await this.log(`Không thể nhận phần thưởng cho nhiệm vụ: ${task.title.yellow}`, 'error');
           }
-
-          const readyForClaimTasks = allTasks.filter(task => task.status === "READY_FOR_CLAIM");
-          this.log(`Số lượng nhiệm vụ chưa claim: ${readyForClaimTasks.length}`, 'info');
-          for (const task of readyForClaimTasks) {
-            this.log(`Claim nhiệm vụ: ${task.title}`, 'info');
-            const claimResult = await this.claimTask(task.id);
-            if (claimResult && claimResult.status === "FINISHED") {
-              this.log(`Làm nhiệm vụ ${task.title.yellow}${`... trạng thái: thành công!`.green}`, 'success');
-            } else {
-              this.log(`Không thể nhận phần thưởng cho nhiệm vụ: ${task.title.yellow}`, 'error');
-            }
-          }
-
         }
       } else {
         await this.log('Không thể lấy danh sách nhiệm vụ hoặc danh sách nhiệm vụ trống', 'error');
@@ -515,7 +541,7 @@ class GameBot {
               if (playResult) {
                 await this.log(`Bắt đầu chơi game lần thứ ${j + 1}...`, 'success');
                 await new Promise(resolve => setTimeout(resolve, 30000));
-                const randomNumber = Math.floor(Math.random() * (250 - 200 + 1)) + 200;
+                const randomNumber = Math.floor(Math.random() * (200 - 150 + 1)) + 150;
                 const claimGameResult = await this.claimGame(randomNumber);
                 if (claimGameResult) {
                   await this.log(`Đã nhận phần thưởng game lần thứ ${j + 1} thành công với ${randomNumber} điểm!`, 'success');
@@ -552,7 +578,7 @@ async function runWorker(workerData) {
   try {
     const remainingTime = await Promise.race([
       gameBot.runAccount(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5 * 60 * 1000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10 * 60 * 1000))
     ]);
     parentPort.postMessage({ accountIndex, remainingTime: remainingTime.as('seconds') });
   } catch (error) {
@@ -588,7 +614,7 @@ function formatProxy(proxy) {
 async function main() {
   this.indexProxies = 0;
   const proxyFile = path.join(`${DATA_DIR}/proxy.txt`);
-  const listProxies = fs.readFileSync(proxyFile, 'utf8')
+  const proxies = fs.readFileSync(proxyFile, 'utf8')
     .replace(/\r/g, '')
     .split('\n')
     .filter(Boolean);
@@ -606,13 +632,12 @@ async function main() {
         .filter(Boolean);
 
     while (currentIndex < queryIds.length) {
-      console.log('Tools is shared at telegram VP Airdrop (@vp_airdrop)');
       console.log(`Đã sợ thì đừng dùng, đã dùng thì đừng sợ!`.magenta);
       const workerPromises = [];
 
       const batchSize = Math.min(maxThreads, queryIds.length - currentIndex);
       for (let i = 0; i < batchSize; i++) {
-        const proxy = formatProxy(getProxy(listProxies));
+        const proxy = formatProxy(getProxy(proxies));
         const worker = new Worker(__filename, {
           workerData: {
             queryId: queryIds[currentIndex],
@@ -661,7 +686,7 @@ async function main() {
       }
     }
 
-    const gameBot = new GameBot(null, 0, listProxies[0]);
+    const gameBot = new GameBot(null, 0, proxies[0]);
     await gameBot.Countdown(6000);
   }
 }
