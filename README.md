@@ -6,6 +6,8 @@ Join telegram group and ask for support : [![Telegram](https://img.shields.io/ba
 
 Click the link below to join the bot app and get the referral link:
 
+✅ [Moonbix](https://t.me/Binance_Moonbix_bot/start?startApp=ref_399199645&startapp=ref_399199645&utm_medium=web_share_copy)
+
 ✅ [Blum](https://t.me/blum/app?startapp=ref_KWlM6oGLsY)
 
 ✅ [Major](https://t.me/major/start?startapp=399199645)
@@ -82,6 +84,17 @@ node blum.js
 ![image](imgs/blum_run.jpg)
 
 This is the same for Major, CZPEPE, Cats, Nomis, Fintopio, Banana, Matchain, Moonbergai
+
+### [Moonbix](https://t.me/Binance_Moonbix_bot/start?startApp=ref_399199645&startapp=ref_399199645&utm_medium=web_share_copy)
+
+```sh
+cd major
+npm install
+node moonbix.js
+
+// or node moonbix-proxy.js for proxy
+```
+![image](imgs/moonbix.jpg)
 
 ### [Major](https://t.me/major/start?startapp=399199645)
 
