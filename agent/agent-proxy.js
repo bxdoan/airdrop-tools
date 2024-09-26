@@ -184,7 +184,7 @@ class AgentAPI {
                 this.log(`Lỗi khi spin: ${error.message}`, 'error');
                 break;
             }
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 5000));
         }
         this.log('Đã sử dụng hết tickets.', 'warning');
     }

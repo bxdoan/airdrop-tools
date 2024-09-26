@@ -79,7 +79,7 @@ class CatsAPI {
                 break;
             case 'custom':
                 console.log(`[${timestamp}] [*] ${msg}`);
-                break;        
+                break;
             case 'error':
                 console.log(`[${timestamp}] [!] ${msg}`.red);
                 break;
@@ -123,16 +123,16 @@ class CatsAPI {
         try {
             const tasksResponse = await this.getTasks(authorization, proxy);
             const incompleteTasks = tasksResponse.data.tasks.filter(task => !task.completed);
-            
+
             for (const task of incompleteTasks) {
                 try {
                     const timeoutPromise = new Promise((_, reject) =>
                         setTimeout(() => reject(new Error('Task completion timed out')), 15000)
                     );
                     const completePromise = this.completeTask(authorization, task.id, proxy);
-                    
+
                     const completeResponse = await Promise.race([completePromise, timeoutPromise]);
-                    
+
                     if (completeResponse.data.success) {
                         this.log(`Làm nhiệm vụ "${task.title}" thành công`, 'success');
                     }
@@ -179,6 +179,7 @@ class CatsAPI {
 
                     await this.completeTasks(authorization, proxy);
                 } catch (error) {
+                    console.log(error);
                     this.log(`Lỗi khi xử lý tài khoản: ${error.message}`, 'error');
                 }
             }

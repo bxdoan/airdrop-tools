@@ -1,4 +1,4 @@
 @echo off
 echo Starting the Banana bot...
-pipenv run python3 banana.py
+node banana-proxy.js
 pause
