@@ -203,14 +203,28 @@ class Tomarket {
         return datas;
     }
 
+    createTokenFile(token_fp) {
+        // if token.json not exists, create it
+        if (!fs.existsSync(token_fp)) {
+            fs.writeFileSync(token_fp, '');
+            fs.appendFile(token_fp, '{}', (err) => {
+                if (err) {
+                    this.log(`Lỗi khi lưu item vào file: ${err.message}`, 'red');
+                }
+            });
+        }
+    }
+
     save(id, token) {
+        this.createTokenFile('./../data/token.json');
         const tokens = JSON.parse(fs.readFileSync('./../data/token.json', 'utf8'));
         tokens[id] = token;
-        fs.writeFileSync('token.json', JSON.stringify(tokens, null, 4));
+        fs.writeFileSync('./../data/token.json', JSON.stringify(tokens, null, 4));
     }
 
     get(id) {
-        const tokens = JSON.parse(fs.readFileSync('token.json', 'utf8'));
+        this.createTokenFile('./../data/token.json');
+        const tokens = JSON.parse(fs.readFileSync('./../data/token.json', 'utf8'));
         return tokens[id] || null;
     }
 
