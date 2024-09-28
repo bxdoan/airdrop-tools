@@ -5,8 +5,10 @@ banana/banana.txt
 */package-lock.json
 Pipfile.lock
 .env
+node_modules/
+package-lock.json
 
 yescoin/token.json
 wonton/check.txt
 wonton/token.json
-coub/token.json
+coub/token.txt

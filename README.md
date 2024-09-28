@@ -188,6 +188,15 @@ node x-proxy.js
 ```
 ![image](imgs/xkucoin.jpg)
 
+### [BOINK](https://t.me/boinker_bot/boinkapp?startapp=boink399199645)
+
+```sh
+cd boinkers
+npm install
+node boinkers-proxy.js
+```
+![image](imgs/boinkers.jpg)
+
 ## Contact
 
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/bxdoan)
