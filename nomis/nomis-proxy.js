@@ -36,7 +36,7 @@ class Nomis {
     }
 
     async auth(telegram_user_id, telegram_username, referrer, proxy) {
-        const url = "https://cms-tg.nomis.cc/api/ton-twa-users/auth/";
+        const url = "https://cms-api.nomis.cc/api/users/auth";
         const headers = this.headers();
         const payload = {
             telegram_user_id,
@@ -183,32 +183,33 @@ class Nomis {
 
     formatProxy(proxy) {
         // from ip:port:user:pass to http://user:pass@ip:port
+        // if http format, just keep it
         if (proxy.startsWith('http')) {
             return proxy;
         }
         const parts = proxy.split(':');
         if (parts.length === 4) {
-          return `http://${parts[2]}:${parts[3]}@${parts[0]}:${parts[1]}`
+            return `http://${parts[2]}:${parts[3]}@${parts[0]}:${parts[1]}`
         } else {
-          return `http://${parts[0]}:${parts[1]}`;
+            return `http://${parts[0]}:${parts[1]}`;
         }
     }
 
     async main() {
+        const dataFile = path.join(__dirname, './../data/nomis.txt');
+        const proxyFile = path.join(__dirname, './../data/proxy.txt');
+        const data = fs.readFileSync(dataFile, 'utf8')
+            .replace(/\r/g, '')
+            .split('\n')
+            .filter(Boolean);
+        const proxies = fs.readFileSync(proxyFile, 'utf8')
+            .replace(/\r/g, '')
+            .split('\n')
+            .filter(Boolean);
+
         let firstFarmCompleteTime = null;
 
         while (true) {
-            const dataFile = path.join(__dirname, './../data/nomis.txt');
-            const proxyFile = path.join(__dirname, './../data/proxy.txt');
-            const data = fs.readFileSync(dataFile, 'utf8')
-                .replace(/\r/g, '')
-                .split('\n')
-                .filter(Boolean);
-            const proxies = fs.readFileSync(proxyFile, 'utf8')
-                .replace(/\r/g, '')
-                .split('\n')
-                .filter(Boolean);
-
             for (let no = 0; no < data.length; no++) {
                 const appInitData = data[no];
                 const proxyIndex = no % proxies.length;
@@ -222,7 +223,7 @@ class Nomis {
                 }
 
                 const [, telegram_user_id, telegram_username] = userMatch;
-                const referrer = "D0dA2sA2Vc"; // refcode
+                const referrer = "8hl9ssTJVK"; // refcode
                 let proxyIP = '';
                 try {
                     proxyIP = await this.checkProxyIP(proxy);
@@ -235,7 +236,7 @@ class Nomis {
                     if (profileData && profileData.id) {
                         const userId = profileData.id;
 
-                        console.log(`========== Tài khoản ${no+1}/${data.length} | ${telegram_username.green} | IP: ${proxyIP} ==========`);
+                        console.log(`========== Tài khoản ${no + 1}/${data.length} | ${telegram_username.green} | IP: ${proxyIP} ==========`);
 
                         const farmDataResponse = await this.getProfile(userId, proxy);
                         const farmData = farmDataResponse.data;
@@ -258,7 +259,6 @@ class Nomis {
                                     this.log(`${'Claim farm thành công!'.green}`);
                                     claimFarmSuccess = true;
                                 } catch (claimError) {
-                                    console.log(claimError);
                                     this.log(`${'Lỗi khi claim farm!'.red}`);
                                 }
                             }
@@ -297,7 +297,6 @@ class Nomis {
                             }
                         } catch (taskError) {
                             this.log(`${'Lỗi khi làm nhiệm vụ'.red}`);
-                            console.log(taskError);
                         }
 
                         try {
@@ -331,14 +330,12 @@ class Nomis {
                             }
                         } catch (error) {
                             this.log(`${'Lỗi khi xử lý referrals'.red}`);
-                            console.log(error);
                         }
                     } else {
                         this.log(`${'Lỗi: Không tìm thấy ID người dùng'.red}`);
                     }
                 } catch (error) {
                     this.log(`${'Lỗi khi xử lý tài khoản'.red}`);
-                    console.log(error);
                 }
             }
     
