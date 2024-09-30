@@ -52,6 +52,8 @@ Click the link below to join the bot app and get the referral link:
 
 ✅ [Sunkong](https://t.me/sunkongmyth_bot/sunkong_miniapp?startapp=25D8F1E09)
 
+✅ [Coub](https://t.me/coub/app?startapp=coub__marker_24684706)
+
 ## Set up
 Required: Node.js and Python
 
@@ -194,6 +196,15 @@ node x-proxy.js
 cd boinkers
 npm install
 node boinkers-proxy.js
+```
+![image](imgs/boinkers.jpg)
+
+### [Coub](https://t.me/coub/app?startapp=coub__marker_24684706)
+
+```sh
+cd coub
+npm install
+node coub-proxy.js
 ```
 ![image](imgs/boinkers.jpg)
 
