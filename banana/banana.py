@@ -3,9 +3,12 @@ import sys
 import random
 import time
 import traceback
+import requests
 from colorama import *
 from datetime import datetime
 import json
+import brotli
+
 import cloudscraper
 
 scraper = cloudscraper.create_scraper()
@@ -22,8 +25,8 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 
 data_file = os.path.join(script_dir, "./../data/banana.txt")
 config_file = os.path.join(script_dir, "config.json")
-
 banana_file = os.path.join(script_dir, "banana.txt")
+
 
 class Banana:
     def __init__(self):
@@ -32,30 +35,30 @@ class Banana:
         self.load_existing_entries()
 
         self.auto_equip_banana = (
-            json.load(open(config_file, "r")).get("auto-equip-banana", "false").lower()
-            == "true"
+                json.load(open(config_file, "r")).get("auto-equip-banana", "false").lower()
+                == "true"
         )
 
         self.auto_do_task = (
-            json.load(open(config_file, "r")).get("auto-do-task", "false").lower()
-            == "true"
+                json.load(open(config_file, "r")).get("auto-do-task", "false").lower()
+                == "true"
         )
 
         self.auto_claim_invite = (
-            json.load(open(config_file, "r")).get("auto-claim-invite", "false").lower()
-            == "true"
+                json.load(open(config_file, "r")).get("auto-claim-invite", "false").lower()
+                == "true"
         )
 
         self.auto_claim_and_harvest = (
-            json.load(open(config_file, "r"))
-            .get("auto-claim-and-harvest", "false")
-            .lower()
-            == "true"
+                json.load(open(config_file, "r"))
+                .get("auto-claim-and-harvest", "false")
+                .lower()
+                == "true"
         )
 
         self.auto_click = (
-            json.load(open(config_file, "r")).get("auto-click", "false").lower()
-            == "true"
+                json.load(open(config_file, "r")).get("auto-click", "false").lower()
+                == "true"
         )
 
     def load_existing_entries(self):
@@ -111,13 +114,10 @@ class Banana:
 
         return response
 
-    def banana_list(self, token):
-        url = f"https://interface.carv.io/banana/get_banana_list"
-
+    def banana_list(self, token, page_num=1, page_size=10):
+        url = f"https://interface.carv.io/banana/get_banana_list/v2?page_num={page_num}&page_size={page_size}"
         headers = self.headers(token=token)
-
         response = scraper.get(url=url, headers=headers)
-
         return response
 
     def equip_banana(self, token, banana_id):
@@ -131,14 +131,21 @@ class Banana:
 
         return response
 
-    def quest_list(self, token):
-        url = f"https://interface.carv.io/banana/get_quest_list"
-
+    def quest_list(self, token, page_num=1, page_size=10):
+        url = f"https://interface.carv.io/banana/get_quest_list/v2?page_num={page_num}&page_size={page_size}"
         headers = self.headers(token=token)
-
-        response = scraper.get(url=url, headers=headers)
-
-        return response
+        try:
+            response = scraper.get(url=url, headers=headers)
+            response.raise_for_status()
+            quest_data = response.json()
+            if quest_data["code"] == 0 and quest_data["msg"] == "Success":
+                quests = quest_data["data"]["list"]
+                return quest_data
+            else:
+                self.log(f"Error in quest_list: {quest_data['msg']}")
+                return None
+        except Exception as e:
+            return None
 
     def achieve_quest(self, token, quest_id):
         url = f"https://interface.carv.io/banana/achieve_quest"
@@ -214,7 +221,6 @@ class Banana:
         response = scraper.post(url=url, headers=headers, data=data)
 
         return response
-
 
     def do_lottery(self, token):
         url = f"https://interface.carv.io/banana/do_lottery"
@@ -321,7 +327,7 @@ class Banana:
                     if tg_id:
                         self.log(f"{yellow}Đang gọi API adsgram...")
                         adsgram_response = self.call_adsgram_api(tg_id)
-                        
+
                         if adsgram_response.status_code == 200:
                             self.log(f"{green}Đã gọi API adsgram thành công")
                         else:
@@ -329,20 +335,21 @@ class Banana:
                             self.log(f"{red}Response content: {adsgram_response.text[:500]}...")
                     else:
                         self.log(f"{yellow}Không có tg_id, bỏ qua việc gọi API adsgram")
-                    
-                    wait_time = 15 + random.uniform(0.1, 0.5)
+
+                    wait_time = 1 + random.uniform(0.1, 0.5)
                     self.log(f"{yellow}Đang chờ {wait_time:.2f} giây trước khi claim quảng cáo...")
                     time.sleep(wait_time)
-                    
+
                     ad_type = 1 if data["show_for_speedup"] else 2
-                    
+
                     claim_response = self.claim_ads_income(token=token, ad_type=ad_type).json()
                     if claim_response["code"] == 0 and claim_response["msg"] == "Success":
                         income = claim_response["data"]["income"]
                         peels = claim_response["data"]["peels"]
                         speedup = claim_response["data"]["speedup"]
                         ad_type_str = "Speedup" if ad_type == 1 else "Peels"
-                        self.log(f"{green}Xem quảng cáo {ad_type_str} thành công: nhận {white}{income} USDT - {peels} Peels - {speedup} Speedup")
+                        self.log(
+                            f"{green}Xem quảng cáo {ad_type_str} thành công: nhận {white}{income} USDT - {peels} Peels - {speedup} Speedup")
                     else:
                         self.log(f"{red}Xem quảng cáo thất bại: {claim_response['msg']}")
                 else:
@@ -364,7 +371,7 @@ class Banana:
             self.log(f"{green}Tổng tài khoản: {white}{num_acc}")
             for no, data in enumerate(data):
                 self.log(self.line)
-                self.log(f"{green}Tài khoản: {white}{no+1}/{num_acc}")
+                self.log(f"{green}Tài khoản: {white}{no + 1}/{num_acc}")
 
                 # Get token
                 try:
@@ -377,7 +384,7 @@ class Banana:
                     peel = get_user_info["data"]["peel"]
                     usdt = get_user_info["data"]["usdt"]
                     speedup = get_user_info["data"]["speedup_count"]
-                    tg_id = get_user_info["data"]["user_id"] 
+                    tg_id = get_user_info["data"]["user_id"]
                     equip_banana_name = get_user_info["data"]["equip_banana"]["name"]
                     equip_banana_peel_limit = get_user_info["data"]["equip_banana"][
                         "daily_peel_limit"
@@ -396,12 +403,12 @@ class Banana:
                     )
 
                     if float(equip_banana_usdt_price) >= 1:
-                        entry = f"Tài khoản {no+1} - {equip_banana_name} - USDT Price: {equip_banana_usdt_price}"
+                        entry = f"Tài khoản {no + 1} - {equip_banana_name} - USDT Price: {equip_banana_usdt_price}"
                         if self.write_unique_entry(entry):
                             self.log(f"{green}Đã ghi thông tin chuối có giá trị lớn hơn 1 vào file banana.txt")
                         else:
                             self.log(f"{yellow}Đã ghi thông tin chuối có giá trị lớn hơn 1 vào file banana.txt")
-                            
+
                     # xem ads
                     self.handle_ads(token, tg_id)
 
@@ -416,11 +423,11 @@ class Banana:
                         if click_left > 0:
                             sessions = 10
                             clicks_per_session = [0] * sessions
-                            
+
                             for _ in range(click_left):
                                 session = random.randint(0, sessions - 1)
                                 clicks_per_session[session] += 1
-                            
+
                             for session, clicks in enumerate(clicks_per_session, 1):
                                 if clicks > 0:
                                     do_click = self.do_click(token=token, click_count=clicks).json()
@@ -433,7 +440,7 @@ class Banana:
                                         )
                                     else:
                                         self.log(f"{red}Tap thất bại trong phiên {session}")
-                                    
+
                                     time.sleep(random.uniform(1, 5))
                         else:
                             self.log(f"{red}Đã đạt giới hạn tap ngày hôm nay")
@@ -443,56 +450,78 @@ class Banana:
                     # Do task
                     if self.auto_do_task:
                         self.log(f"{yellow}Tự động thực hiện nhiệm vụ: {green}ON")
-                        get_quest_list = self.quest_list(token=token).json()
-                        quest_list = get_quest_list["data"]["quest_list"]
-                        for quest in quest_list:
-                            quest_id = quest["quest_id"]
-                            quest_name = quest["quest_name"]
-                            achieve_status = quest["is_achieved"]
-                            claim_status = quest["is_claimed"]
-                            if not achieve_status and not claim_status:
-                                achieve_quest = self.achieve_quest(
-                                    token=token, quest_id=quest_id
-                                ).json()
-                                claim_quest = self.claim_quest(
-                                    token=token, quest_id=quest_id
-                                ).json()
-                                quest_status = claim_quest["msg"]
-                                if quest_status == "Success":
-                                    self.log(f"{white}Làm nhiệm vụ {yellow}{quest_name}: {green}Thành công")
-                                else:
-                                    self.log(
-                                        f"{white}Làm nhiệm vụ {yellow}{quest_name}: {red}Thất bại (cần tự làm)"
-                                    )
-                            elif achieve_status and not claim_status:
-                                claim_quest = self.claim_quest(
-                                    token=token, quest_id=quest_id
-                                ).json()
-                                quest_status = claim_quest["msg"]
-                                if quest_status == "Success":
-                                    self.log(f"{white}Làm nhiệm vụ {yellow}{quest_name}: {green}Thành công")
-                                else:
-                                    self.log(
-                                        f"{white}Làm nhiệm vụ {yellow}{quest_name}: {red}Thất bại (cần tự làm)"
-                                    )
-                            else:
-                                self.log(f"{white}Làm nhiệm vụ {yellow}{quest_name}: {green}Thành công")
+                        get_quest_list = self.quest_list(token=token)
+                        if get_quest_list and "data" in get_quest_list and "list" in get_quest_list["data"]:
+                            quest_list = get_quest_list["data"]["list"]
 
-                        while True:
-                            claim_quest_lottery = self.claim_quest_lottery(
-                                token=token
-                            ).json()
-                            quest_lottery_status = claim_quest_lottery["msg"]
-                            if quest_lottery_status == "Success":
-                                self.log(
-                                    f"{white}Claim Quest {green}Thành công"
-                                )
-                                continue
-                            else:
-                                self.log(
-                                    f"{red}Không có Quest cần claim"
-                                )
-                                break
+                            for quest in quest_list:
+                                quest_id = quest.get("quest_id") or quest.get("id")
+                                if quest_id is None:
+                                    self.log(f"{red}Không tìm thấy quest_id cho nhiệm vụ: {quest}")
+                                    continue
+
+                                quest_name = quest.get("quest_name", "Unknown")
+                                achieve_status = quest.get("is_achieved", False)
+                                claim_status = quest.get("is_claimed", False)
+
+                                if not achieve_status and not claim_status:
+                                    try:
+                                        achieve_quest = self.achieve_quest(token=token, quest_id=quest_id).json()
+                                        if achieve_quest.get("code") == 0 and achieve_quest.get("msg") == "Success":
+                                            self.log(
+                                                f"{white}Hoàn thành nhiệm vụ {yellow}{quest_name}: {green}Thành công")
+                                        else:
+                                            self.log(
+                                                f"{white}Hoàn thành nhiệm vụ {yellow}{quest_name}: {red}Thất bại - {achieve_quest.get('msg', 'Unknown error')}")
+
+                                        claim_quest = self.claim_quest(token=token, quest_id=quest_id).json()
+                                        if claim_quest.get("code") == 0 and claim_quest.get("msg") == "Success":
+                                            self.log(
+                                                f"{white}Nhận thưởng nhiệm vụ {yellow}{quest_name}: {green}Thành công")
+                                        else:
+                                            self.log(
+                                                f"{white}Nhận thưởng nhiệm vụ {yellow}{quest_name}: {red}Thất bại - {claim_quest.get('msg', 'Unknown error')}")
+                                    except Exception as e:
+                                        self.log(f"{red}Lỗi khi xử lý nhiệm vụ {quest_name}:")
+                                        self.log(f"{red}{str(e)}")
+                                        self.log(f"{red}Traceback:")
+                                        self.log(f"{red}{traceback.format_exc()}")
+                                elif achieve_status and not claim_status:
+                                    try:
+                                        claim_quest = self.claim_quest(token=token, quest_id=quest_id).json()
+                                        if claim_quest.get("code") == 0 and claim_quest.get("msg") == "Success":
+                                            self.log(
+                                                f"{white}Nhận thưởng nhiệm vụ {yellow}{quest_name}: {green}Thành công")
+                                        else:
+                                            self.log(
+                                                f"{white}Nhận thưởng nhiệm vụ {yellow}{quest_name}: {red}Thất bại - {claim_quest.get('msg', 'Unknown error')}")
+                                    except Exception as e:
+                                        self.log(f"{red}Lỗi khi nhận thưởng nhiệm vụ {quest_name}:")
+                                        self.log(f"{red}{str(e)}")
+                                        self.log(f"{red}Traceback:")
+                                        self.log(f"{red}{traceback.format_exc()}")
+                                else:
+                                    self.log(
+                                        f"{white}Nhiệm vụ {yellow}{quest_name}: {green}Đã hoàn thành và nhận thưởng")
+
+                            # Xử lý claim quest lottery
+                            while True:
+                                try:
+                                    claim_quest_lottery = self.claim_quest_lottery(token=token).json()
+                                    if claim_quest_lottery.get("code") == 0 and claim_quest_lottery.get(
+                                            "msg") == "Success":
+                                        self.log(f"{white}Claim Quest Lottery: {green}Thành công")
+                                    else:
+                                        self.log(f"{yellow}Không còn Quest Lottery để claim")
+                                        break
+                                except Exception as e:
+                                    self.log(f"{red}Lỗi khi claim Quest Lottery:")
+                                    self.log(f"{red}{str(e)}")
+                                    self.log(f"{red}Traceback:")
+                                    self.log(f"{red}{traceback.format_exc()}")
+                                    break
+                        else:
+                            self.log(f"{red}Không thể lấy danh sách nhiệm vụ hoặc danh sách trống")
                     else:
                         self.log(f"{yellow}Tự động thực hiện nhiệm vụ: {red}OFF")
 
@@ -529,10 +558,10 @@ class Banana:
                                 lottery_data = get_lottery_info.get("data", {})
                                 lottery_status = lottery_data.get("countdown_end", False)
                                 lottery_count = lottery_data.get("remain_lottery_count", 0)
-                                
+
                                 remaining_time = self.calculate_remaining_time(lottery_data)
                                 remaining_time_str = f"{int(remaining_time)} phút" if remaining_time > 0 else "0 phút"
-                                
+
                                 self.log(f"{white}Thời gian còn lại để thu hoạch: {green}{remaining_time_str}")
 
                                 get_user_info = self.user_info(token=token).json()
@@ -541,13 +570,14 @@ class Banana:
                                 while remaining_time > 60 and speedup_count > 0:
                                     self.log(f"{yellow}Sử dụng Speedup. Còn lại: {white}{speedup_count}")
                                     do_speedup_response = self.do_speedup(token=token).json()
-                                    
+
                                     if do_speedup_response["code"] == 0 and do_speedup_response["msg"] == "Success":
                                         speedup_count = do_speedup_response["data"]["speedup_count"]
                                         new_lottery_info = do_speedup_response["data"]["lottery_info"]
                                         remaining_time = self.calculate_remaining_time(new_lottery_info)
                                         remaining_time_str = f"{int(remaining_time)} phút" if remaining_time > 0 else "0 phút"
-                                        self.log(f"{green}Sử dụng Speedup thành công. Thời gian còn lại: {white}{remaining_time_str}")
+                                        self.log(
+                                            f"{green}Sử dụng Speedup thành công. Thời gian còn lại: {white}{remaining_time_str}")
                                     else:
                                         self.log(f"{red}Sử dụng Speedup thất bại: {do_speedup_response['msg']}")
                                         break
@@ -572,19 +602,21 @@ class Banana:
                                         usdt_value = banana_data.get("sell_exchange_usdt", 0)
                                         peel_value = banana_data.get("sell_exchange_peel", 0)
                                         banana_id = banana_data.get("banana_id")
-                                        
+
                                         self.log(f"{white}Harvest Banana: {green}Thành công")
-                                        self.log(f"{white}Nhận được: {green}{banana_name} - {usdt_value} USDT - {peel_value} Peel")
-                                        
+                                        self.log(
+                                            f"{white}Nhận được: {green}{banana_name} - {usdt_value} USDT - {peel_value} Peel")
+
                                         ads_response = self.claim_ads_income(token=token, ad_type=2).json()
                                         if ads_response["code"] == 0 and ads_response["msg"] == "Success":
                                             income = ads_response["data"]["income"]
                                             peels = ads_response["data"]["peels"]
                                             speedup = ads_response["data"]["speedup"]
-                                            self.log(f"{green}Xem quảng cáo thành công: nhận {white}{income} USDT - {peels} Peels - {speedup} Speedup")
+                                            self.log(
+                                                f"{green}Xem quảng cáo thành công: nhận {white}{income} USDT - {peels} Peels - {speedup} Speedup")
                                         else:
                                             self.log(f"{red}Xem quảng cáo thất bại: {ads_response['msg']}")
-                                        
+
                                         share_response = self.do_share(token=token, banana_id=banana_id).json()
                                         if share_response["code"] == 0 and share_response["msg"] == "Success":
                                             self.log(f"{green}Share chuối thành công!")
@@ -608,27 +640,38 @@ class Banana:
                     if self.auto_equip_banana:
                         self.log(f"{yellow}Sử dụng chuối tốt nhất: {green}ON")
                         get_banana_list = self.banana_list(token=token).json()
-                        banana_list = get_banana_list["data"]["banana_list"]
-                        banana_with_max_peel = max(
-                            (banana for banana in banana_list if banana["count"] > 0),
-                            key=lambda b: b["daily_peel_limit"],
-                        )
-                        banana_id = banana_with_max_peel["banana_id"]
-                        banana_name = banana_with_max_peel["name"]
-                        banana_peel_limit = banana_with_max_peel["daily_peel_limit"]
-                        banana_peel_price = banana_with_max_peel["sell_exchange_peel"]
-                        banana_usdt_price = banana_with_max_peel["sell_exchange_usdt"]
+                        if get_banana_list["code"] == 0 and get_banana_list["msg"] == "Success":
+                            banana_list = get_banana_list["data"]["list"]
+                            available_bananas = [banana for banana in banana_list if banana["count"] > 0]
+                            if available_bananas:
+                                banana_with_max_peel = max(
+                                    available_bananas,
+                                    key=lambda b: b["daily_peel_limit"],
+                                )
+                                banana_id = banana_with_max_peel["banana_id"]
+                                banana_name = banana_with_max_peel["name"]
+                                banana_peel_limit = banana_with_max_peel["daily_peel_limit"]
+                                banana_peel_price = banana_with_max_peel["sell_exchange_peel"]
+                                banana_usdt_price = banana_with_max_peel["sell_exchange_usdt"]
 
-                        equip_banana = self.equip_banana(
-                            token=token, banana_id=banana_id
-                        ).json()
-                        equip_status = equip_banana["msg"]
-                        if equip_status == "Success":
-                            self.log(
-                                f"{green}Bạn đang dùng chuối tốt nhất: {white}{banana_name} - {green}Daily Peel Limit: {white}{banana_peel_limit} - {green}Peel Price: {white}{banana_peel_price} - {green}USDT Price: {white}{banana_usdt_price}"
-                            )
+                                equip_url = "https://interface.carv.io/banana/do_equip"
+                                equip_data = {"bananaId": banana_id}
+                                equip_banana = scraper.post(url=equip_url, headers=self.headers(token),
+                                                            json=equip_data).json()
+                                equip_status = equip_banana["msg"]
+                                if equip_status == "Success":
+                                    self.log(
+                                        f"{green}Bạn đang dùng chuối tốt nhất: {white}{banana_name} - "
+                                        f"{green}Daily Peel Limit: {white}{banana_peel_limit} - "
+                                        f"{green}Peel Price: {white}{banana_peel_price} - "
+                                        f"{green}USDT Price: {white}{banana_usdt_price}"
+                                    )
+                                else:
+                                    self.log(f"{white}Sử dụng chuối: {red}Thất bại - {equip_status}")
+                            else:
+                                self.log(f"{red}Không có chuối khả dụng để sử dụng")
                         else:
-                            self.log(f"{white}Sử dụng chuối: {green}Thất bại")
+                            self.log(f"{red}Không thể lấy danh sách chuối: {get_banana_list['msg']}")
                     else:
                         self.log(f"{yellow}Sử dụng chuối tốt nhất: {red}OFF")
 
@@ -637,7 +680,7 @@ class Banana:
 
             print()
             wait_time = 60 * 60
-            self.log(f"{yellow}Cần chờ {int(wait_time/60)} để tiếp tục!")
+            self.log(f"{yellow}Cần chờ {int(wait_time / 60)} để tiếp tục!")
             time.sleep(wait_time)
 
 
