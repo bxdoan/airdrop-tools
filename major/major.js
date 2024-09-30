@@ -20,7 +20,6 @@ class GLaDOS {
         this.swipeCoinUrl = 'https://major.glados.app/api/swipe_coin/';
         this.durovUrl = 'https://major.bot/api/durov/';
         this.durovPayloadUrl = 'https://raw.githubusercontent.com/dancayairdrop/blum/main/durov.json';
-        this.proxies = fs.readFileSync('proxy.txt', 'utf8').split('\n').filter(Boolean);
         this.accountIndex = 0;
         this.proxyIP = null;
     }
@@ -57,7 +56,6 @@ class GLaDOS {
     async log(msg, type = 'info') {
         const timestamp = new Date().toLocaleTimeString();
         const accountPrefix = `[Tài khoản ${this.accountIndex + 1}]`;
-        const ipPrefix = this.proxyIP ? `[${this.proxyIP}]` : '[Unknown IP]';
         let logMessage = '';
 
         switch(type) {
