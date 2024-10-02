@@ -246,7 +246,7 @@ class MidasApp:
 
     def run_continuously(self):
         while True:
-            self.log("Tool được chia sẻ tại kênh telegram Dân Cày Airdrop (@dancayairdrop)", Fore.MAGENTA)
+            self.log("Tool được chia sẻ tại kênh telegram VP Airdrop (@vp_airdrop)", Fore.MAGENTA)
             self.process_accounts()
             self.log("Hoàn thành chu kỳ xử lý tài khoản", Fore.MAGENTA)
             self.log(f"Chờ 24 giờ trước khi bắt đầu chu kỳ tiếp theo...", Fore.YELLOW)
