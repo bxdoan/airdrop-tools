@@ -597,7 +597,7 @@ class Tomarket {
         }
         const datas = this.loadData(dataFile);
 		
-		this.log('Tool được chia sẻ tại kênh telegram Dân Cày Airdrop (@dancayairdrop)'.green);
+		this.log('Tool được chia sẻ tại kênh telegram VP Airdrop (@vp_airdrop)'.green);
         
         const nhiemvu = await this.askQuestion('Bạn có muốn làm nhiệm vụ không? (y/n): ');
         const hoinhiemvu = nhiemvu.toLowerCase() === 'y';
