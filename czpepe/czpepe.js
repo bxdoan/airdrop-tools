@@ -157,6 +157,41 @@ class GameBot {
     }
   }
 
+  async spinGames() {
+    try {
+      const response = await axios.get(
+          `https://bot.czpepe.lol/api/games/proceed.php?user_id=${this.telegram_id}`,
+          {headers: await this.headers(this.token)});
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        this.log('Không thể lấy thông tin nhiệm vụ', 'error');
+        return null;
+      }
+    } catch (error) {
+      this.log(`Không thể lấy thông tin nhiệm vụ: ${error.message}`, 'error');
+      return null;
+    }
+  }
+
+  async getEarn() {
+    try {
+      const response = await axios.get(
+          `https://bot.czpepe.lol/api/games/index.php?user_id=${this.telegram_id}`,
+          {headers: await this.headers(this.token)});
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        this.log('Không thể lấy thông tin nhiệm vụ', 'error');
+        return null;
+      }
+    } catch (error) {
+      this.log(`Không thể lấy thông tin nhiệm vụ: ${error.message}`, 'error');
+      return null;
+    }
+  }
+
+
   async doTask(taskId, slug) {
     try {
       const response = await axios.post(
@@ -265,13 +300,43 @@ class GameBot {
             }
           }
           this.log(`Số nhiệm vụ chưa hoàn thành: ${count}`, 'success');
-
+          const skipTasks = [
+              "invite-frens",
+              "invite-frens10",
+              "invite-frens20",
+              "invite-frens50",
+              "invite-frens100",
+              "make-transaction",
+              "make-transaction-v2",
+              "make-transaction-v3",
+              "boost-channel"
+          ];
           // loop and doTask
           for (const task of tasks) {
             if (!task.complete) {
+              if (skipTasks.includes(task.slug)) {
+                  continue;
+              }
               const result = await this.doTask(task.id, task.slug);
               if (result) {
                 this.log(`Làm nhiệm vụ ${task.id}: ${task.slug.yellow} được ${task.reward}`.green);
+              }
+            }
+          }
+        }
+
+        let earn = await this.getEarn();
+        if (earn) {
+          this.log(`Số lượt quay/Tổng:  ${earn.current_play_time}/${earn.max_playtime_per_day}`, 'info');
+          this.log(`NFT:  ${earn.nft_balance}`, 'info');
+          this.log(`TON Balance:  ${earn.ton_balance}`, 'info');
+          if (earn.current_play_time <= earn.max_playtime_per_day) {
+            while (earn.current_play_time <= earn.max_playtime_per_day) {
+              const spin = await this.spinGames();
+              this.log(`Quay game ${earn.current_play_time}/${earn.max_playtime_per_day} thành công`, 'success');
+              earn = spin.user_info;
+              if (spin.user_info.current_play_time >= spin.user_info.max_playtime_per_day) {
+                break;
               }
             }
           }
