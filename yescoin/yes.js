@@ -1,17 +1,10 @@
 const fs = require('fs');
 const axios = require('axios');
 const colors = require('colors');
-const path = require('path');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
+const crypto = require('crypto');
 
-// try load ./../.env file and get DATA_DIR environment variable
-try {
-    require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
-}
-catch (error) {
-}
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 
 function formatProxy(proxy) {
     // from ip:port:user:pass to http://user:pass@ip:port
@@ -163,8 +156,12 @@ class YesCoinBot {
         }
     }
 
-    async makeRequest(method, url, data = null, token, proxy) {
-        const headers = this.headers(token);
+    async makeRequest(method, url, data = null, token, proxy, extraHeaders = {}) {
+        const defaultHeaders = this.headers(token);
+        const headers = {
+            ...defaultHeaders,
+            ...extraHeaders
+        };
         const proxyAgent = new HttpsProxyAgent(proxy);
         const config = {
             method,
@@ -444,6 +441,13 @@ class YesCoinBot {
         }
     }
 
+    generateClaimSign(params, secretKey) {
+        const { id, tm, claimType } = params;
+        const inputString = id + tm + secretKey + claimType;
+        const sign = crypto.createHash('md5').update(inputString).digest('hex');
+        return sign;
+    }
+
     async handleSwipeBot(token, proxy) {
         const url = 'https://api.yescoin.gold/build/getAccountBuildInfo';
         try {
@@ -475,17 +479,48 @@ class YesCoinBot {
                     const offlineBonusInfo = await this.makeRequest('get', offlineBonusUrl, null, token, proxy);
                     if (offlineBonusInfo.code === 0 && offlineBonusInfo.data.length > 0) {
                         const claimUrl = 'https://api.yescoin.gold/game/claimOfflineBonus';
+                        const tm = Math.floor(Date.now() / 1000);
                         const claimData = {
                             id: offlineBonusInfo.data[0].transactionId,
-                            createAt: Math.floor(Date.now() / 1000),
+                            createAt: tm,
                             claimType: 1,
                             destination: ""
                         };
-                        const claimResponse = await this.makeRequest('post', claimUrl, claimData, token, proxy);
+
+                        const signParams = {
+                            id: claimData.id,
+                            tm: tm,
+                            claimType: claimData.claimType
+                        };
+
+                        const secretKey = '6863b339db454f5bbd42ffb5b5ac9841';
+                        const sign = this.generateClaimSign(signParams, secretKey);
+
+                        const headers = {
+                            'Accept': 'application/json, text/plain, */*',
+                            'Accept-Language': 'en-US,en;q=0.9',
+                            'Cache-Control': 'no-cache',
+                            'Content-Type': 'application/json',
+                            'Origin': 'https://www.yescoin.gold',
+                            'Pragma': 'no-cache',
+                            'Referer': 'https://www.yescoin.gold/',
+                            'Sec-Ch-Ua': '"Not.A/Brand";v="8", "Chromium";v="114"',
+                            'Sec-Ch-Ua-Mobile': '?0',
+                            'Sec-Ch-Ua-Platform': '"Windows"',
+                            'Sec-Fetch-Dest': 'empty',
+                            'Sec-Fetch-Mode': 'cors',
+                            'Sec-Fetch-Site': 'same-site',
+                            'Sign': sign,
+                            'Tm': tm.toString(),
+                            'Token': token,
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+                        };
+
+                        const claimResponse = await this.makeRequest('post', claimUrl, claimData, token, proxy, headers);
                         if (claimResponse.code === 0) {
                             await this.log(`Claim offline bonus thành công, nhận ${claimResponse.data.collectAmount} coins`, 'success');
                         } else {
-                            await this.log('Claim offline bonus thất bại', 'error');
+                            await this.log(`Claim offline bonus thất bại: ${claimResponse.message}`, 'error');
                         }
                     }
                 }
@@ -550,31 +585,180 @@ class YesCoinBot {
     }
 
     async checkAndClaimTaskBonus(token, proxy) {
-        const url = 'https://api-backend.yescoin.gold/task/getFinishTaskBonusInfo';
+    const url = 'https://api-backend.yescoin.gold/task/getFinishTaskBonusInfo';
+    try {
+        const response = await this.makeRequest('get', url, null, token, proxy);
+        if (response.code === 0) {
+        const bonusInfo = response.data;
+        const claimUrl = 'https://api-backend.yescoin.gold/task/claimBonus';
+
+        if (bonusInfo.commonTaskBonusStatus === 1) {
+            const claimResponse = await this.makeRequest('post', claimUrl, 2, token, proxy);
+            if (claimResponse.code === 0) {
+            await this.log(`Claim Common Task bonus thành công | phần thưởng ${claimResponse.data.bonusAmount}`, 'success');
+            }
+        }
+
+        if (bonusInfo.dailyTaskBonusStatus === 1) {
+            const claimResponse = await this.makeRequest('post', claimUrl, 1, token, proxy);
+            if (claimResponse.code === 0) {
+            await this.log(`Claim Daily Task bonus thành công | phần thưởng ${claimResponse.data.bonusAmount}`, 'success');
+            }
+        }
+
+        if (bonusInfo.commonTaskBonusStatus !== 1 && bonusInfo.dailyTaskBonusStatus !== 1) {
+            await this.log('Chưa đủ điều kiện nhận Task bonus', 'info');
+            return false;
+        }
+
+        return true;
+        } else {
+        await this.log(`Không lấy được thông tin task bonus: ${response.message}`, 'error');
+        return false;
+        }
+    } catch (error) {
+        await this.log(`Lỗi khi kiểm tra và claim Task bonus: ${error.message}`, 'error');
+        return false;
+    }
+    }
+
+    async performDailyMissions(token, proxy) {
         try {
-            const response = await this.makeRequest('get', url, null, token, proxy);
-            if (response.code === 0) {
-                const bonusInfo = response.data;
-                if (bonusInfo.commonTaskBonusStatus === 1) {
-                    const claimUrl = 'https://api-backend.yescoin.gold/task/claimBonus';
-                    const claimResponse = await this.makeRequest('post', claimUrl, 2, token, proxy);
-                    if (claimResponse.code === 0) {
-                        await this.log(`Claim Task bonus thành công | phần thưởng ${claimResponse.data.bonusAmount}`, 'success');
-                        return true;
-                    } else {
-                        await this.log(`Claim Task bonus thất bại: ${claimResponse.message}`, 'error');
-                        return false;
+            const dailyMissionsUrl = 'https://api-backend.yescoin.gold/mission/getDailyMission';
+            const dailyMissionsResponse = await this.makeRequest('get', dailyMissionsUrl, null, token, proxy);
+
+            if (dailyMissionsResponse.code === 0) {
+                for (const mission of dailyMissionsResponse.data) {
+                    if (mission.missionStatus === 0) {
+
+                        const clickUrl = 'https://api-backend.yescoin.gold/mission/clickDailyMission';
+                        await this.makeRequest('post', clickUrl, mission.missionId, token, proxy);
+
+                        const checkUrl = 'https://api-backend.yescoin.gold/mission/checkDailyMission';
+                        const checkResponse = await this.makeRequest('post', checkUrl, mission.missionId, token, proxy);
+
+                        if (checkResponse.code === 0 && checkResponse.data === true) {
+                            const claimUrl = 'https://api-backend.yescoin.gold/mission/claimReward';
+                            const claimResponse = await this.makeRequest('post', claimUrl, mission.missionId, token, proxy);
+
+                            if (claimResponse.code === 0) {
+                                const reward = claimResponse.data.reward;
+                                await this.log(`Làm nhiệm vụ ${mission.name} thành công | Phần thưởng: ${reward}`, 'success');
+                            } else {
+                                await this.log(`Nhận thưởng nhiệm vụ ${mission.name} thất bại: ${claimResponse.message}`, 'error');
+                            }
+                        } else {
+                            await this.log(`Kiểm tra nhiệm vụ ${mission.name} thất bại`, 'error');
+                        }
                     }
-                } else {
-                    await this.log('Chưa đủ điều kiện nhận Task bonus', 'info');
-                    return false;
                 }
+                return true;
             } else {
-                await this.log(`Không lấy được thông tin task bonus: ${response.message}`, 'error');
+                await this.log(`Không thể lấy danh sách nhiệm vụ hàng ngày: ${dailyMissionsResponse.message}`, 'error');
                 return false;
             }
         } catch (error) {
-            await this.log(`Lỗi khi kiểm tra và claim Task bonus: ${error.message}`, 'error');
+            await this.log(`Lỗi khi thực hiện nhiệm vụ hàng ngày: ${error.message}`, 'error');
+            return false;
+        }
+    }
+
+    generateSign(params, secretKey) {
+        const { id, tm, signInType } = params;
+        const inputString = id + tm + secretKey + signInType;
+        const sign = crypto.createHash('md5').update(inputString).digest('hex');
+        return sign;
+    }
+
+    async performDailySignIn(token, proxy) {
+        try {
+            const secretKey = '6863b339db454f5bbd42ffb5b5ac9841';
+            const getCurrentTimestamp = () => Math.floor(Date.now() / 1000);
+
+            // Lấy danh sách điểm danh
+            const signInListUrl = 'https://api-backend.yescoin.gold/signIn/list';
+            const signInListResponse = await this.makeRequest('get', signInListUrl, null, token, proxy);
+
+            if (signInListResponse.code === 0) {
+                const availableSignIn = signInListResponse.data.find(item => item.status === 1);
+
+                if (availableSignIn) {
+                    const tm = getCurrentTimestamp();
+                    const signInUrl = 'https://api-backend.yescoin.gold/signIn/claim';
+                    const signInData = {
+                        id: availableSignIn.id,
+                        createAt: tm,
+                        signInType: 1,
+                        destination: ""
+                    };
+
+                    const signParams = {
+                        id: signInData.id,
+                        tm: tm,
+                        signInType: signInData.signInType
+                    };
+
+                    const sign = this.generateSign(signParams, secretKey);
+
+                    // Header đầy đủ cho yêu cầu điểm danh
+                    const headers = {
+                        'Accept': 'application/json, text/plain, */*',
+                        'Accept-Language': 'en-US,en;q=0.9',
+                        'Cache-Control': 'no-cache',
+                        'Content-Type': 'application/json',
+                        'Origin': 'https://www.yescoin.gold',
+                        'Pragma': 'no-cache',
+                        'Referer': 'https://www.yescoin.gold/',
+                        'Sec-Ch-Ua': '"Not.A/Brand";v="8", "Chromium";v="114"',
+                        'Sec-Ch-Ua-Mobile': '?0',
+                        'Sec-Ch-Ua-Platform': '"Windows"',
+                        'Sec-Fetch-Dest': 'empty',
+                        'Sec-Fetch-Mode': 'cors',
+                        'Sec-Fetch-Site': 'same-site',
+                        'Sign': sign,
+                        'Tm': tm.toString(),
+                        'Token': token,
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)'
+                    };
+
+                    const signInResponse = await this.makeRequest('post', signInUrl, signInData, token, proxy, headers);
+                    if (signInResponse.code === 0) {
+                        const reward = signInResponse.data.reward;
+                        await this.log(`Điểm danh hàng ngày thành công | Phần thưởng: ${reward}`, 'success');
+                        return true;
+                    } else {
+                        await this.log(`Điểm danh hàng ngày thất bại: ${JSON.stringify({
+                            code: signInResponse.code,
+                            message: signInResponse.message,
+                            data: signInResponse.data
+                        })}`, 'error');
+                        return false;
+                    }
+                } else {
+                    await this.log(`Hôm nay bạn đã điểm danh rồi`, 'warning');
+                    return false;
+                }
+            } else {
+                await this.log(`Không thể lấy danh sách điểm danh: ${JSON.stringify({
+                    code: signInListResponse.code,
+                    message: signInListResponse.message,
+                    data: signInListResponse.data
+                })}`, 'error');
+                return false;
+            }
+        } catch (error) {
+            await this.log(`Lỗi khi thực hiện điểm danh hàng ngày: ${error.message}
+            Stack: ${error.stack}
+            Request details: ${JSON.stringify({
+                url: error.config?.url,
+                method: error.config?.method,
+                headers: error.config?.headers,
+                data: error.config?.data
+            })}
+            Response: ${JSON.stringify({
+                status: error.response?.status,
+                data: error.response?.data
+            })}`, 'error');
             return false;
         }
     }
@@ -630,6 +814,11 @@ class YesCoinBot {
                 }
             }
 
+            await this.performTaskWithTimeout(
+                () => this.performDailySignIn(this.token, this.proxy),
+                'Performing daily sign-in',
+                30000
+            );
 
             const balance = await this.performTaskWithTimeout(
                 () => this.getAccountInfo(this.token, this.proxy),
@@ -660,6 +849,12 @@ class YesCoinBot {
                 () => this.handleSwipeBot(this.token, this.proxy),
                 'Handling SwipeBot',
                 30000
+            );
+
+            await this.performTaskWithTimeout(
+                () => this.performDailyMissions(this.token, this.proxy),
+                'Performing daily missions',
+                60000
             );
 
             if (this.config.TaskEnable) {
