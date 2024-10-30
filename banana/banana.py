@@ -31,7 +31,6 @@ data_file = os.path.join(script_dir, "./../data/banana.txt")
 config_file = os.path.join(script_dir, "config.json")
 banana_file = os.path.join(script_dir, "banana.txt")
 
-
 class Banana:
     def __init__(self):
         self.line = white + "~" * 50
@@ -65,6 +64,8 @@ class Banana:
                 == "true"
         )
 
+        self.min_harvest_time = float('inf')
+
     def load_existing_entries(self):
         try:
             with open(banana_file, "r", encoding="utf-8") as f:
@@ -85,35 +86,31 @@ class Banana:
         return False
 
     def pad(self, s):
-        block_size = 16
-        padding = block_size - len(s.encode('utf-8')) % block_size
-        return s + chr(padding) * padding
+        BS = 16
+        return s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
 
-    def get_key_and_iv(self, password, salt, klen=32, ilen=16, msgdgst='md5'):
-        password = password.encode('utf-8')
-        maxlen = klen + ilen
-        keyiv = b''
-        prev = b''
-        while len(keyiv) < maxlen:
-            prev = hashlib.md5(prev + password + salt).digest()
-            keyiv += prev
-        key = keyiv[:klen]
-        iv = keyiv[klen:klen + ilen]
-        return key, iv
+    def SA(self, e=None):
+        if e is None:
+            e = int(time.time() * 1000)
 
-    def encrypt_timestamp(self, timestamp, password):
-        salt = Random.new().read(8)
-        key, iv = self.get_key_and_iv(password, salt)
-        cipher = AES.new(key, AES.MODE_CBC, iv)
-        padded_timestamp = self.pad(timestamp)
-        encrypted = cipher.encrypt(padded_timestamp.encode('utf-8'))
-        encrypted_data = b"Salted__" + salt + encrypted
-        encrypted_b64 = base64.b64encode(encrypted_data).decode('utf-8')
-        return encrypted_b64
+        def encrypt(t, n):
+            n = str(n).zfill(16)[:16]
+            n = n.encode('utf-8')
+            t = str(t).encode('utf-8')
+            cipher = AES.new(n, AES.MODE_CBC, iv=n)
+            padded = self.pad(t.decode('utf-8'))
+            encrypted = cipher.encrypt(padded.encode('utf-8'))
+            hex_str = ''.join([format(b, '02x') for b in encrypted])
+            return hex_str
+
+        wA = "https://interface.carv.io"
+        xA = "JVQXFtvBnIMTMB9t"
+
+        result = encrypt(str(e), xA)
+        return result
 
     def headers(self, token):
-        timestamp = str(int(time.time() * 1000))
-        encrypted_timestamp = self.encrypt_timestamp(timestamp, "1,1,0")
+        x_interceptor_id = self.SA()
         return {
             "Accept": "application/json, text/plain, */*",
             "Authorization": f"Bearer {token}",
@@ -121,7 +118,7 @@ class Banana:
             "Referer": "https://banana.carv.io/",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
             "X-App-Id": "carv",
-            "Request-Time": encrypted_timestamp
+            "X-Interceptor-Id": x_interceptor_id
         }
 
     def do_lottery(self, token):
@@ -133,12 +130,14 @@ class Banana:
 
     def get_token(self, data):
         url = f"https://interface.carv.io/banana/login"
-
+        x_interceptor_id = self.SA()
         headers = {
             "Accept": "application/json, text/plain, */*",
             "Origin": "https://banana.carv.io",
             "Referer": "https://banana.carv.io/",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+            "X-App-Id": "carv",
+            "X-Interceptor-Id": x_interceptor_id
         }
 
         data = {"tgInfo": f"{data}"}
@@ -400,8 +399,7 @@ class Banana:
                         peels = claim_response["data"]["peels"]
                         speedup = claim_response["data"]["speedup"]
                         ad_type_str = "Speedup" if ad_type == 1 else "Peels"
-                        self.log(
-                            f"{green}Xem quảng cáo {ad_type_str} thành công: nhận {white}{income} USDT - {peels} Peels - {speedup} Speedup")
+                        self.log(f"{green}Xem quảng cáo {ad_type_str} thành công: nhận {white}{income} USDT - {peels} Peels - {speedup} Speedup")
                     else:
                         self.log(f"{red}Xem quảng cáo thất bại: {claim_response['msg']}")
                 else:
@@ -421,9 +419,11 @@ class Banana:
             num_acc = len(data)
             self.log(self.line)
             self.log(f"{green}Tổng tài khoản: {white}{num_acc}")
+            self.min_harvest_time = float('inf')
+
             for no, data in enumerate(data):
                 self.log(self.line)
-                self.log(f"{green}Tài khoản: {white}{no + 1}/{num_acc}")
+                self.log(f"{green}Tài khoản: {white}{no+1}/{num_acc}")
 
                 # Get token
                 try:
@@ -455,7 +455,7 @@ class Banana:
                     )
 
                     if float(equip_banana_usdt_price) >= 1:
-                        entry = f"Tài khoản {no + 1} - {equip_banana_name} - USDT Price: {equip_banana_usdt_price}"
+                        entry = f"Tài khoản {no+1} - {equip_banana_name} - USDT Price: {equip_banana_usdt_price}"
                         if self.write_unique_entry(entry):
                             self.log(f"{green}Đã ghi thông tin chuối có giá trị lớn hơn 1 vào file banana.txt")
                         else:
@@ -520,19 +520,15 @@ class Banana:
                                     try:
                                         achieve_quest = self.achieve_quest(token=token, quest_id=quest_id).json()
                                         if achieve_quest.get("code") == 0 and achieve_quest.get("msg") == "Success":
-                                            self.log(
-                                                f"{white}Hoàn thành nhiệm vụ {yellow}{quest_name}: {green}Thành công")
+                                            self.log(f"{white}Hoàn thành nhiệm vụ {yellow}{quest_name}: {green}Thành công")
                                         else:
-                                            self.log(
-                                                f"{white}Hoàn thành nhiệm vụ {yellow}{quest_name}: {red}Thất bại - {achieve_quest.get('msg', 'Unknown error')}")
+                                            self.log(f"{white}Hoàn thành nhiệm vụ {yellow}{quest_name}: {red}Thất bại - {achieve_quest.get('msg', 'Unknown error')}")
 
                                         claim_quest = self.claim_quest(token=token, quest_id=quest_id).json()
                                         if claim_quest.get("code") == 0 and claim_quest.get("msg") == "Success":
-                                            self.log(
-                                                f"{white}Nhận thưởng nhiệm vụ {yellow}{quest_name}: {green}Thành công")
+                                            self.log(f"{white}Nhận thưởng nhiệm vụ {yellow}{quest_name}: {green}Thành công")
                                         else:
-                                            self.log(
-                                                f"{white}Nhận thưởng nhiệm vụ {yellow}{quest_name}: {red}Thất bại - {claim_quest.get('msg', 'Unknown error')}")
+                                            self.log(f"{white}Nhận thưởng nhiệm vụ {yellow}{quest_name}: {red}Thất bại - {claim_quest.get('msg', 'Unknown error')}")
                                     except Exception as e:
                                         self.log(f"{red}Lỗi khi xử lý nhiệm vụ {quest_name}:")
                                         self.log(f"{red}{str(e)}")
@@ -542,26 +538,22 @@ class Banana:
                                     try:
                                         claim_quest = self.claim_quest(token=token, quest_id=quest_id).json()
                                         if claim_quest.get("code") == 0 and claim_quest.get("msg") == "Success":
-                                            self.log(
-                                                f"{white}Nhận thưởng nhiệm vụ {yellow}{quest_name}: {green}Thành công")
+                                            self.log(f"{white}Nhận thưởng nhiệm vụ {yellow}{quest_name}: {green}Thành công")
                                         else:
-                                            self.log(
-                                                f"{white}Nhận thưởng nhiệm vụ {yellow}{quest_name}: {red}Thất bại - {claim_quest.get('msg', 'Unknown error')}")
+                                            self.log(f"{white}Nhận thưởng nhiệm vụ {yellow}{quest_name}: {red}Thất bại - {claim_quest.get('msg', 'Unknown error')}")
                                     except Exception as e:
                                         self.log(f"{red}Lỗi khi nhận thưởng nhiệm vụ {quest_name}:")
                                         self.log(f"{red}{str(e)}")
                                         self.log(f"{red}Traceback:")
                                         self.log(f"{red}{traceback.format_exc()}")
                                 else:
-                                    self.log(
-                                        f"{white}Nhiệm vụ {yellow}{quest_name}: {green}Đã hoàn thành và nhận thưởng")
+                                    self.log(f"{white}Nhiệm vụ {yellow}{quest_name}: {green}Đã hoàn thành và nhận thưởng")
 
                             # Xử lý claim quest lottery
                             while True:
                                 try:
                                     claim_quest_lottery = self.claim_quest_lottery(token=token).json()
-                                    if claim_quest_lottery.get("code") == 0 and claim_quest_lottery.get(
-                                            "msg") == "Success":
+                                    if claim_quest_lottery.get("code") == 0 and claim_quest_lottery.get("msg") == "Success":
                                         self.log(f"{white}Claim Quest Lottery: {green}Thành công")
                                     else:
                                         self.log(f"{yellow}Không còn Quest Lottery để claim")
@@ -615,6 +607,8 @@ class Banana:
                                 remaining_time_str = f"{int(remaining_time)} phút" if remaining_time > 0 else "0 phút"
 
                                 self.log(f"{white}Thời gian còn lại để thu hoạch: {green}{remaining_time_str}")
+                                self.min_harvest_time = min(self.min_harvest_time, remaining_time)
+                                self.log(f"{white}Số lượng lottery còn lại: {green}{lottery_count}")
 
                                 get_user_info = self.user_info(token=token).json()
                                 speedup_count = get_user_info["data"]["speedup_count"]
@@ -628,8 +622,7 @@ class Banana:
                                         new_lottery_info = do_speedup_response["data"]["lottery_info"]
                                         remaining_time = self.calculate_remaining_time(new_lottery_info)
                                         remaining_time_str = f"{int(remaining_time)} phút" if remaining_time > 0 else "0 phút"
-                                        self.log(
-                                            f"{green}Sử dụng Speedup thành công. Thời gian còn lại: {white}{remaining_time_str}")
+                                        self.log(f"{green}Sử dụng Speedup thành công. Thời gian còn lại: {white}{remaining_time_str}")
                                     else:
                                         self.log(f"{red}Sử dụng Speedup thất bại: {do_speedup_response['msg']}")
                                         break
@@ -645,7 +638,8 @@ class Banana:
                                     else:
                                         self.log(f"{white}Claim Banana: {red}Thất bại")
                                         self.log(f"{red}Chi tiết lỗi: {claim_lottery}")
-                                elif lottery_count > 0:
+
+                                while lottery_count > 0:
                                     do_lottery_response = self.do_lottery(token=token)
                                     do_lottery = do_lottery_response.json()
                                     lottery_status = do_lottery.get('msg')
@@ -657,16 +651,14 @@ class Banana:
                                         banana_id = banana_data.get("banana_id")
 
                                         self.log(f"{white}Harvest Banana: {green}Thành công")
-                                        self.log(
-                                            f"{white}Nhận được: {green}{banana_name} - {usdt_value} USDT - {peel_value} Peel")
+                                        self.log(f"{white}Nhận được: {green}{banana_name} - {usdt_value} USDT - {peel_value} Peel")
 
                                         ads_response = self.claim_ads_income(token=token, ad_type=2).json()
                                         if ads_response["code"] == 0 and ads_response["msg"] == "Success":
                                             income = ads_response["data"]["income"]
                                             peels = ads_response["data"]["peels"]
                                             speedup = ads_response["data"]["speedup"]
-                                            self.log(
-                                                f"{green}Xem quảng cáo thành công: nhận {white}{income} USDT - {peels} Peels - {speedup} Speedup")
+                                            self.log(f"{green}Xem quảng cáo thành công: nhận {white}{income} USDT - {peels} Peels - {speedup} Speedup")
                                         else:
                                             self.log(f"{red}Xem quảng cáo thất bại: {ads_response['msg']}")
 
@@ -675,9 +667,21 @@ class Banana:
                                             self.log(f"{green}Share chuối thành công!")
                                         else:
                                             self.log(f"{red}Share chuối thất bại: {share_response['msg']}")
+
+                                        lottery_count -= 1
+                                        self.log(f"{white}Số lượng chuối chưa harvest: {green}{lottery_count}")
+
+                                        if lottery_count > 0:
+                                            self.log(f"{yellow}Chờ 10 giây trước khi harvest chuối tiếp theo...")
+                                            time.sleep(10)
                                     else:
                                         self.log(f"{white}Harvest Banana: {red}Thất bại")
                                         self.log(f"{red}Chi tiết lỗi: {do_lottery}")
+                                        break
+
+                                if lottery_count == 0:
+                                    self.log(f"{white}Đã harvest hết tất cả chuối")
+                                    break
                                 else:
                                     self.log(f"{white}Claim and Harvest Banana: {yellow}Chưa đến thời gian thu hoạch")
                                     break
@@ -730,8 +734,7 @@ class Banana:
                                             f"{green}USDT Price: {white}{banana_usdt_price}"
                                         )
                                     else:
-                                        self.log(
-                                            f"{white}Sử dụng chuối: {red}Thất bại - {equip_banana_response['msg']}")
+                                        self.log(f"{white}Sử dụng chuối: {red}Thất bại - {equip_banana_response['msg']}")
                         except Exception as e:
                             self.log(f"{red}Lỗi khi sử dụng chuối tốt nhất: {str(e)}")
                             self.log(f"Traceback: {traceback.format_exc()}")
@@ -740,11 +743,15 @@ class Banana:
 
 
                 except Exception as e:
-                    self.log(f"{red}Đăng nhập thất bại, thử lại sau!")
+                    self.log(f"{red}Lỗi không xác định:")
+                    self.log(f"{red}Type: {type(e).__name__}")
+                    self.log(f"{red}Error: {str(e)}")
+                    self.log(f"{red}Traceback:")
+                    self.log(f"{red}{traceback.format_exc()}")
 
             print()
-            wait_time = 60 * 60
-            self.log(f"{yellow}Cần chờ {int(wait_time / 60)} để tiếp tục!")
+            wait_time = max(1, int(self.min_harvest_time * 60))
+            self.log(f"{yellow}Cần chờ {int(wait_time/60)} phút {wait_time%60} giây để tiếp tục!")
             time.sleep(wait_time)
 
 

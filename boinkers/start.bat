@@ -1,4 +1,4 @@
 @echo off
 echo Starting the Boinkers bot...
-node boinkers-proxy.js
+node boinkers.js
 pause
